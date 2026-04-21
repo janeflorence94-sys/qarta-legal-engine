@@ -1,8 +1,5 @@
 import os
 import requests
-from dotenv import load_dotenv
-
-load_dotenv(override=False)  # system env vars take priority over .env
 
 AIRTABLE_API_URL = "https://api.airtable.com/v0"
 

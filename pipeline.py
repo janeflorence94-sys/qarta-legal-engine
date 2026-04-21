@@ -7,12 +7,9 @@ from pathlib import Path
 
 import anthropic
 from docx import Document as DocxDocument
-from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 
 from airtable_loader import load_lcm_records
-
-load_dotenv(override=False)  # system env vars take priority over .env
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 PROMPT_FILES = [

@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,7 +28,6 @@ def health():
 
 @app.get("/debug/env")
 def debug_env():
-    import os
     return {
         "ANTHROPIC_API_KEY": "set" if os.getenv("ANTHROPIC_API_KEY") else "missing",
         "AIRTABLE_API_KEY":  "set" if os.getenv("AIRTABLE_API_KEY")  else "missing",
@@ -42,7 +42,6 @@ async def adapt(
     doc_type: str = Form(...),
     company_name: str = Form(...),
 ):
-    # Validate file extension
     suffix = Path(file.filename).suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -56,7 +55,6 @@ async def adapt(
 
     job_id = str(uuid.uuid4())
 
-    # Run pipeline
     try:
         result = adapt_contract(
             file_bytes=file_bytes,
@@ -70,7 +68,6 @@ async def adapt(
     except TimeoutError as e:
         raise HTTPException(status_code=504, detail=str(e))
 
-    # Build Word outputs
     try:
         paths = build_outputs(
             clean_text=result["clean"],
@@ -88,9 +85,9 @@ async def adapt(
         "status": "success",
         "job_id": job_id,
         "files": {
-            "clean":       f"/outputs/{job_id}_clean.docx",
-            "redline":     f"/outputs/{job_id}_redline.docx",
-            "commentary":  f"/outputs/{job_id}_commentary.docx",
+            "clean":      f"/outputs/{job_id}_clean.docx",
+            "redline":    f"/outputs/{job_id}_redline.docx",
+            "commentary": f"/outputs/{job_id}_commentary.docx",
         },
         "metadata": {
             "company":        company_name,
@@ -105,7 +102,6 @@ async def adapt(
 
 @app.get("/outputs/{filename}")
 def serve_output(filename: str):
-    # Restrict to job_id prefixed .docx files only
     if not filename.endswith(".docx"):
         raise HTTPException(status_code=400, detail="Only .docx files are served from this endpoint.")
 
@@ -113,20 +109,10 @@ def serve_output(filename: str):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"File '{filename}' not found.")
 
-    # Prevent path traversal
     try:
         file_path.resolve().relative_to(OUTPUTS_DIR.resolve())
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid file path.")
-
-@app.get("/debug/env")
-def debug_env():
-    import os
-    return {
-        "ANTHROPIC_API_KEY": "set" if os.getenv("ANTHROPIC_API_KEY") else "missing",
-        "AIRTABLE_API_KEY": "set" if os.getenv("AIRTABLE_API_KEY") else "missing",
-        "AIRTABLE_BASE_ID": os.getenv("AIRTABLE_BASE_ID", "missing")
-    }
 
     return FileResponse(
         path=str(file_path),
