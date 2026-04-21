@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+outputs/
+*.docx
+!05_test_contract_CN.docx
+!04_testing_protocol.docx
+venv/
+.venv/
