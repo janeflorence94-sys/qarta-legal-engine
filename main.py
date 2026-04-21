@@ -119,6 +119,15 @@ def serve_output(filename: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid file path.")
 
+@app.get("/debug/env")
+def debug_env():
+    import os
+    return {
+        "ANTHROPIC_API_KEY": "set" if os.getenv("ANTHROPIC_API_KEY") else "missing",
+        "AIRTABLE_API_KEY": "set" if os.getenv("AIRTABLE_API_KEY") else "missing",
+        "AIRTABLE_BASE_ID": os.getenv("AIRTABLE_BASE_ID", "missing")
+    }
+
     return FileResponse(
         path=str(file_path),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
