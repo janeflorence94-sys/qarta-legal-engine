@@ -2,10 +2,8 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=False)  # system env vars take priority over .env
 
-AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
-AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
 AIRTABLE_API_URL = "https://api.airtable.com/v0"
 
 # Maps doc_type identifiers to Airtable table names
@@ -22,17 +20,20 @@ STRATEGIES_TABLE = "Rewrite Strategies"
 
 
 def _get_headers():
-    if not AIRTABLE_API_KEY:
-        raise ValueError("AIRTABLE_API_KEY is not set in .env")
-    if not AIRTABLE_BASE_ID:
-        raise ValueError("AIRTABLE_BASE_ID is not set in .env")
-    return {"Authorization": f"Bearer {AIRTABLE_API_KEY}"}
+    api_key = os.getenv("AIRTABLE_API_KEY")
+    base_id = os.getenv("AIRTABLE_BASE_ID")
+    if not api_key:
+        raise ValueError("AIRTABLE_API_KEY is not set in environment variables.")
+    if not base_id:
+        raise ValueError("AIRTABLE_BASE_ID is not set in environment variables.")
+    return {"Authorization": f"Bearer {api_key}"}
 
 
 def _fetch_all_records(table_name: str) -> list[dict]:
     """Fetch all records from a table, handling Airtable's 100-record pagination."""
     headers = _get_headers()
-    url = f"{AIRTABLE_API_URL}/{AIRTABLE_BASE_ID}/{requests.utils.quote(table_name)}"
+    base_id = os.getenv("AIRTABLE_BASE_ID")
+    url = f"{AIRTABLE_API_URL}/{base_id}/{requests.utils.quote(table_name)}"
 
     records = []
     params = {}
@@ -44,7 +45,7 @@ def _fetch_all_records(table_name: str) -> list[dict]:
             raise ValueError("Invalid AIRTABLE_API_KEY — authentication failed.")
         if response.status_code == 404:
             raise ValueError(
-                f"Table '{table_name}' not found in base '{AIRTABLE_BASE_ID}'. "
+                f"Table '{table_name}' not found in base '{base_id}'. "
                 "Check that the table name matches exactly."
             )
         if response.status_code != 200:

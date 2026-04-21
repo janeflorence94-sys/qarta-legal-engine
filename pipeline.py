@@ -12,7 +12,7 @@ from PyPDF2 import PdfReader
 
 from airtable_loader import load_lcm_records
 
-load_dotenv()
+load_dotenv(override=False)  # system env vars take priority over .env
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 PROMPT_FILES = [
