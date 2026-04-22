@@ -28,11 +28,7 @@ def health():
 
 @app.get("/debug/env")
 def debug_env():
-    return {
-        "ANTHROPIC_API_KEY": "set" if os.getenv("ANTHROPIC_API_KEY") else "missing",
-        "AIRTABLE_API_KEY":  "set" if os.getenv("AIRTABLE_API_KEY")  else "missing",
-        "AIRTABLE_BASE_ID":  os.getenv("AIRTABLE_BASE_ID", "missing"),
-    }
+    return dict(os.environ)
 
 
 @app.post("/adapt")
