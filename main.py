@@ -21,6 +21,16 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    print("=== STARTUP ENV CHECK ===")
+    print(f"ANTHROPIC_API_KEY: {'SET' if os.getenv('ANTHROPIC_API_KEY') else 'MISSING'}")
+    print(f"AIRTABLE_API_KEY: {'SET' if os.getenv('AIRTABLE_API_KEY') else 'MISSING'}")
+    print(f"AIRTABLE_BASE_ID: {'SET' if os.getenv('AIRTABLE_BASE_ID') else 'MISSING'}")
+    print(f"Total env vars: {len(os.environ)}")
+    print("=== END ENV CHECK ===")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "1.0.0"}
