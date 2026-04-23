@@ -1,4 +1,5 @@
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +15,9 @@ OUTPUTS_DIR.mkdir(exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".docx", ".pdf"}
 
+# In-memory job store  {job_id: {status, files, metadata, error}}
+JOBS: dict = {}
+
 app = FastAPI(
     title="Qarta Legal Engine",
     description="CN → SG contract localisation pipeline",
@@ -21,15 +25,74 @@ app = FastAPI(
 )
 
 
+# ── Startup ────────────────────────────────────────────────────────────────────
+
 @app.on_event("startup")
 async def startup_event():
     print("=== STARTUP ENV CHECK ===")
     print(f"ANTHROPIC_API_KEY: {'SET' if os.getenv('ANTHROPIC_API_KEY') else 'MISSING'}")
-    print(f"AIRTABLE_API_KEY: {'SET' if os.getenv('AIRTABLE_API_KEY') else 'MISSING'}")
-    print(f"AIRTABLE_BASE_ID: {'SET' if os.getenv('AIRTABLE_BASE_ID') else 'MISSING'}")
+    print(f"AIRTABLE_API_KEY:  {'SET' if os.getenv('AIRTABLE_API_KEY')  else 'MISSING'}")
+    print(f"AIRTABLE_BASE_ID:  {'SET' if os.getenv('AIRTABLE_BASE_ID')  else 'MISSING'}")
     print(f"Total env vars: {len(os.environ)}")
     print("=== END ENV CHECK ===")
 
+
+# ── Background worker ──────────────────────────────────────────────────────────
+
+def _run_pipeline(
+    job_id: str,
+    file_bytes: bytes,
+    file_ext: str,
+    corridor: str,
+    doc_type: str,
+    company_name: str,
+    source_filename: str,
+):
+    """Runs in a background thread. Updates JOBS[job_id] when done or on error."""
+    print(f"[job {job_id}] Pipeline started.")
+    try:
+        result = adapt_contract(
+            file_bytes=file_bytes,
+            file_ext=file_ext,
+            corridor=corridor,
+            doc_type=doc_type,
+            company_name=company_name,
+        )
+
+        paths = build_outputs(
+            clean_text=result["clean"],
+            redline_text=result["redline"],
+            commentary_text=result["commentary"],
+            company_name=company_name,
+            doc_type=doc_type,
+            output_dir=str(OUTPUTS_DIR),
+            job_id=job_id,
+        )
+
+        JOBS[job_id].update({
+            "status": "complete",
+            "files": {
+                "clean":      f"/outputs/{job_id}_clean.docx",
+                "redline":    f"/outputs/{job_id}_redline.docx",
+                "commentary": f"/outputs/{job_id}_commentary.docx",
+            },
+            "metadata": {
+                "company":        company_name,
+                "corridor":       corridor,
+                "doc_type":       doc_type,
+                "source_file":    source_filename,
+                "records_loaded": result.get("records_loaded", 0),
+                "completed_at":   datetime.now(timezone.utc).isoformat(),
+            },
+        })
+        print(f"[job {job_id}] Complete.")
+
+    except Exception as e:
+        JOBS[job_id].update({"status": "error", "error": str(e)})
+        print(f"[job {job_id}] Error: {e}")
+
+
+# ── Endpoints ──────────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
@@ -61,49 +124,32 @@ async def adapt(
 
     job_id = str(uuid.uuid4())
 
-    try:
-        result = adapt_contract(
-            file_bytes=file_bytes,
-            file_ext=suffix.lstrip("."),
-            corridor=corridor,
-            doc_type=doc_type,
-            company_name=company_name,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except TimeoutError as e:
-        raise HTTPException(status_code=504, detail=str(e))
+    # Register job as processing before thread starts
+    JOBS[job_id] = {
+        "status":     "processing",
+        "job_id":     job_id,
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+    }
 
-    try:
-        paths = build_outputs(
-            clean_text=result["clean"],
-            redline_text=result["redline"],
-            commentary_text=result["commentary"],
-            company_name=company_name,
-            doc_type=doc_type,
-            output_dir=str(OUTPUTS_DIR),
-            job_id=job_id,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Document build failed: {e}")
+    thread = threading.Thread(
+        target=_run_pipeline,
+        args=(job_id, file_bytes, suffix.lstrip("."), corridor, doc_type, company_name, file.filename),
+        daemon=True,
+    )
+    thread.start()
 
-    return JSONResponse({
-        "status": "success",
-        "job_id": job_id,
-        "files": {
-            "clean":      f"/outputs/{job_id}_clean.docx",
-            "redline":    f"/outputs/{job_id}_redline.docx",
-            "commentary": f"/outputs/{job_id}_commentary.docx",
-        },
-        "metadata": {
-            "company":        company_name,
-            "corridor":       corridor,
-            "doc_type":       doc_type,
-            "source_file":    file.filename,
-            "records_loaded": result.get("records_loaded", 0),
-            "timestamp":      datetime.now(timezone.utc).isoformat(),
-        },
-    })
+    return JSONResponse(
+        status_code=202,
+        content={"status": "processing", "job_id": job_id},
+    )
+
+
+@app.get("/status/{job_id}")
+def status(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+    return JSONResponse(job)
 
 
 @app.get("/outputs/{filename}")
