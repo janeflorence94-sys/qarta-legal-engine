@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 import uuid
@@ -14,10 +15,33 @@ from pipeline import adapt_contract
 OUTPUTS_DIR = Path(__file__).parent / "outputs"
 OUTPUTS_DIR.mkdir(exist_ok=True)
 
+JOBS_DIR = Path("/tmp/jobs")
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
+
 ALLOWED_EXTENSIONS = {".docx", ".pdf"}
 
-# In-memory job store  {job_id: {status, files, metadata, error}}
-JOBS: dict = {}
+
+# ── File-based job store ───────────────────────────────────────────────────────
+
+def _job_path(job_id: str) -> Path:
+    return JOBS_DIR / f"{job_id}.json"
+
+
+def _write_job(data: dict) -> None:
+    _job_path(data["job_id"]).write_text(json.dumps(data), encoding="utf-8")
+
+
+def _read_job(job_id: str) -> dict | None:
+    path = _job_path(job_id)
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _update_job(job_id: str, updates: dict) -> None:
+    data = _read_job(job_id) or {"job_id": job_id}
+    data.update(updates)
+    _write_job(data)
 
 app = FastAPI(
     title="Qarta Legal Engine",
@@ -56,7 +80,7 @@ def _run_pipeline(
     company_name: str,
     source_filename: str,
 ):
-    """Runs in a background thread. Updates JOBS[job_id] when done or on error."""
+    """Runs in a background thread. Writes status to /tmp/jobs/{job_id}.json."""
     print(f"[job {job_id}] Pipeline started.")
     try:
         result = adapt_contract(
@@ -67,7 +91,7 @@ def _run_pipeline(
             company_name=company_name,
         )
 
-        paths = build_outputs(
+        build_outputs(
             clean_text=result["clean"],
             redline_text=result["redline"],
             commentary_text=result["commentary"],
@@ -77,7 +101,7 @@ def _run_pipeline(
             job_id=job_id,
         )
 
-        JOBS[job_id].update({
+        _update_job(job_id, {
             "status": "complete",
             "files": {
                 "clean":      f"/outputs/{job_id}_clean.docx",
@@ -96,7 +120,7 @@ def _run_pipeline(
         print(f"[job {job_id}] Complete.")
 
     except Exception as e:
-        JOBS[job_id].update({"status": "error", "error": str(e)})
+        _update_job(job_id, {"status": "error", "error": str(e)})
         print(f"[job {job_id}] Error: {e}")
 
 
@@ -132,12 +156,12 @@ async def adapt(
 
     job_id = str(uuid.uuid4())
 
-    # Register job as processing before thread starts
-    JOBS[job_id] = {
-        "status":     "processing",
-        "job_id":     job_id,
+    # Write initial job state before thread starts
+    _write_job({
+        "status":       "processing",
+        "job_id":       job_id,
         "submitted_at": datetime.now(timezone.utc).isoformat(),
-    }
+    })
 
     thread = threading.Thread(
         target=_run_pipeline,
@@ -154,7 +178,7 @@ async def adapt(
 
 @app.get("/status/{job_id}")
 def status(job_id: str):
-    job = JOBS.get(job_id)
+    job = _read_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
     return JSONResponse(job)
