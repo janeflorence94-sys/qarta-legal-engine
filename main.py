@@ -150,6 +150,22 @@ def debug_env():
     return dict(os.environ)
 
 
+@app.get("/test/nda")
+def test_nda():
+    import requests
+    key  = os.getenv("AIRTABLE_API_KEY")
+    base = os.getenv("AIRTABLE_BASE_ID")
+    url  = f"https://api.airtable.com/v0/{base}/NDA%20Clauses%20(Demo%20Tier)?maxRecords=1"
+    r = requests.get(url, headers={"Authorization": f"Bearer {key}"})
+    return {
+        "status_code": r.status_code,
+        "response":    r.text[:500],
+        "key_prefix":  key[:15] if key else "MISSING",
+        "base_id":     base or "MISSING",
+        "url":         url,
+    }
+
+
 @app.post("/adapt")
 async def adapt(
     file: UploadFile = File(...),
