@@ -1,5 +1,13 @@
 import os
+
 import requests
+
+
+def _encode_table(name: str) -> str:
+    """Encode a table name for use in an Airtable URL path.
+    Airtable accepts literal parentheses but requires spaces as %20.
+    Over-encoding parentheses as %28/%29 causes 403 errors."""
+    return name.replace(" ", "%20")
 
 AIRTABLE_API_URL = "https://api.airtable.com/v0"
 
@@ -8,6 +16,7 @@ DOC_TYPE_TABLE_MAP = {
     "employment_contract": "Employment Contract Clauses",
     "service_agreement": "Service Agreement Clauses",
     "nda": "NDA Clauses (Demo Tier)",
+    "non_disclosure_agreement": "NDA Clauses (Demo Tier)",
     "pdpa": "PDPA Data Protection Clauses",
     "document_types": "Document Types",
     "automation_types": "Automation Types",
@@ -30,7 +39,7 @@ def _fetch_all_records(table_name: str) -> list[dict]:
     """Fetch all records from a table, handling Airtable's 100-record pagination."""
     headers = _get_headers()
     base_id = os.getenv("AIRTABLE_BASE_ID")
-    url = f"{AIRTABLE_API_URL}/{base_id}/{requests.utils.quote(table_name)}"
+    url = f"{AIRTABLE_API_URL}/{base_id}/{_encode_table(table_name)}"
 
     records = []
     params = {}
