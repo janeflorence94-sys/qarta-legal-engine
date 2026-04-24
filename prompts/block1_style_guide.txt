@@ -205,3 +205,256 @@ These phrases must never appear in any operative clause:
 - Never end a document without a signature block and date fields
 
 
+PART 5 — SERVICE AGREEMENT ADAPTATION RULES (CN → SG)
+
+Load this part for every service agreement adaptation run.
+These rules operate in addition to Parts 1–4 above.
+
+
+5.1 Party References — Replace Without Exception
+
+| Source (Chinese contract)  | Replace with                          |
+|----------------------------|---------------------------------------|
+| 甲方 / Party A             | the Client                            |
+| 乙方 / Party B             | the Service Provider                  |
+| Company / Firm / Entity    | [the Client / the Service Provider]   |
+
+Apply the replacement globally on first pass before any other adaptation.
+Never leave "Party A" or "Party B" in the adapted document.
+Define both parties in full in Clause 1 with:
+- Full legal name
+- UEN number (for Singapore entities): [UEN: PARAMETERIZED]
+- Registered address
+
+
+5.2 Mandatory Insertions — Apply If Absent, Rewrite If Non-Compliant
+
+INSERT 1 — Governing Law (mandatory replacement)
+Remove: any reference to PRC law / PRC courts / Chinese jurisdiction.
+Insert:
+"This Agreement shall be governed by and construed in accordance with
+the laws of Singapore."
+
+INSERT 2 — Dispute Resolution (mandatory replacement)
+Remove: CIETAC / Chinese arbitration / Chinese mandatory mediation /
+        any reference to PRC dispute resolution mechanism.
+Insert:
+"Any dispute arising out of or in connection with this Agreement,
+including any question regarding its existence, validity, or
+termination, shall be referred to and finally resolved by arbitration
+administered by the Singapore International Arbitration Centre ('SIAC')
+in accordance with the Arbitration Rules of the SIAC for the time being
+in force, which rules are deemed to be incorporated by reference to
+this clause. The seat of arbitration shall be Singapore. The tribunal
+shall consist of [one / three] arbitrator(s). The language of the
+arbitration shall be English."
+
+Commentary template:
+"Replaced CIETAC arbitration with SIAC arbitration under INSERT 2 of
+the CN→SG Service Agreement Rules. CIETAC clauses are unenforceable
+in Singapore. SIAC is Singapore's primary arbitration institution
+and its awards are enforceable in over 170 jurisdictions under the
+New York Convention. The number of arbitrators is PARAMETERIZED —
+one arbitrator is standard for disputes below SGD 1,000,000; three
+arbitrators for disputes above that threshold."
+
+INSERT 3 — PDPA Data Handling (mandatory — Chinese agreements never include this)
+Insert as standalone clause after Confidentiality:
+"Each party shall comply with its obligations under the Personal Data
+Protection Act 2012 ('PDPA') in respect of any personal data processed
+in connection with this Agreement. The Service Provider shall: (a)
+process personal data only on the documented instructions of the Client;
+(b) implement reasonable security arrangements under PDPA s.24; (c)
+notify the Client within twenty-four (24) hours of becoming aware of
+any data breach affecting personal data processed under this Agreement;
+and (d) upon termination, return or securely destroy all personal data
+in accordance with the Client's written instructions."
+
+INSERT 4 — IP Ownership (mandatory — Chinese agreements are ambiguous or silent)
+Insert:
+"All work product, deliverables, reports, software, designs,
+documentation, and other materials created by the Service Provider
+in the performance of the Services ('Work Product') shall, upon
+creation and to the fullest extent permitted by law, vest in and
+be the absolute property of the Client. The Service Provider hereby
+assigns to the Client, with full title guarantee, all intellectual
+property rights subsisting in the Work Product. The Service Provider
+shall execute all documents and do all acts reasonably required to
+perfect the Client's title to the Work Product."
+
+Commentary template:
+"Inserted under INSERT 4 of the CN→SG Service Agreement Rules.
+Chinese service agreements frequently omit IP ownership provisions
+or use ambiguous language that creates joint ownership by default.
+Under Singapore law, the default position for work created by an
+independent contractor (as opposed to an employee) is that IP vests
+in the contractor, not the client: Clearlab SG Pte Ltd v Ting Chong
+Chai [2015] SGHC 28. An express assignment clause is therefore
+mandatory to ensure the client owns what it has paid for.
+LAWYER REVIEW REQUIRED if any pre-existing IP of the Service
+Provider is incorporated into the Work Product — a licence (not
+assignment) is appropriate for that portion."
+
+INSERT 5 — GST Clause
+Insert in Fees and Payment clause:
+"All fees and charges specified in this Agreement are exclusive of
+Goods and Services Tax ('GST'). Where GST is applicable, it shall
+be charged in addition to the stated fee at the prevailing rate
+(currently nine per cent (9%)) and the Client shall pay such GST
+upon receipt of a valid tax invoice."
+
+Commentary template:
+"Inserted under INSERT 5 of the CN→SG Service Agreement Rules.
+Chinese contracts do not include GST provisions. GST at 9% (as of
+1 January 2024) applies to most services supplied by GST-registered
+businesses in Singapore. The rate is REFERENCE_ONLY — verify the
+prevailing rate at iras.gov.sg at the date of signing."
+
+INSERT 6 — Payment Terms (mandatory specificity)
+If source specifies vague timing ("reasonable time" / "promptly" /
+"as agreed" / no payment period):
+Rewrite to:
+"The Client shall pay each invoice within [thirty (30) / fourteen (14)]
+calendar days of the date of the invoice ('Payment Due Date').
+Any amount not paid by the Payment Due Date shall accrue interest
+at the rate of [one and a half per cent (1.5%)] per month or part
+thereof from the Payment Due Date until the date of actual payment."
+
+INSERT 7 — Limitation of Liability (insert if absent)
+"Notwithstanding any other provision of this Agreement, the total
+aggregate liability of the Service Provider to the Client (whether
+in contract, tort, including negligence, breach of statutory duty,
+or otherwise) arising under or in connection with this Agreement
+shall not exceed the total fees paid by the Client to the Service
+Provider in the [twelve (12)] calendar months immediately preceding
+the event giving rise to the claim. Neither party shall be liable
+to the other for any indirect, consequential, special, or punitive
+loss or damage, including loss of profit, loss of revenue, or loss
+of business opportunity, whether or not such loss was foreseeable."
+
+Commentary template:
+"Inserted under INSERT 7 of the CN→SG Service Agreement Rules.
+Chinese contracts frequently omit liability caps, exposing the
+Service Provider to unlimited liability. Under Singapore contract
+law, limitation clauses are enforceable provided they satisfy the
+reasonableness test under the Unfair Contract Terms Act (Cap. 396)
+('UCTA'). A cap set at 12 months' fees is generally considered
+reasonable: Photo Production Ltd v Securicor Transport Ltd [1980]
+AC 827 (applied in Singapore). LAWYER REVIEW REQUIRED to confirm
+the cap is appropriate for the specific risk profile of the
+services being provided."
+
+INSERT 8 — Force Majeure (adapted to Singapore law)
+Remove: Chinese force majeure provisions referencing PRC government
+        certificates, CIETAC administration, or Chinese law standards.
+Insert:
+"Neither party shall be liable for any failure or delay in
+performing its obligations under this Agreement to the extent
+that such failure or delay is caused by a Force Majeure Event.
+A 'Force Majeure Event' means any event beyond the reasonable
+control of the affected party, including acts of God, natural
+disasters, pandemic or epidemic declared by a competent authority,
+war, terrorism, civil disorder, or action by a government authority.
+The affected party shall: (a) notify the other party in writing
+within five (5) Business Days of becoming aware of the Force
+Majeure Event; (b) use reasonable endeavours to mitigate the
+effect of the Force Majeure Event; and (c) resume performance
+as soon as reasonably practicable. If the Force Majeure Event
+continues for more than ninety (90) calendar days, either party
+may terminate this Agreement on thirty (30) calendar days'
+written notice without liability."
+
+
+5.3 Mandatory Replacements — Apply Globally
+
+REPLACEMENT 1 — Currency
+Source: RMB / CNY / 人民币 / any Chinese currency reference
+Replace: Singapore Dollars (SGD)
+Rule: On first use, write "Singapore Dollars (SGD [amount])".
+      Subsequently use "SGD [amount]".
+Note: Do NOT convert the numerical amount — use [AMOUNT: convert
+      from RMB to SGD at current exchange rate] as a placeholder.
+
+REPLACEMENT 2 — Company Law References
+Source: 《公司法》/ PRC Company Law / Chinese company law provisions /
+        references to Chinese corporate structure or registration
+Replace: Companies Act (Cap. 50) of Singapore
+First use: "Companies Act (Cap. 50) (the 'Companies Act')"
+Subsequent: "the Companies Act"
+
+REPLACEMENT 3 — Arbitration Body
+Source: CIETAC / China International Economic and Trade Arbitration
+        Commission / 中国国际经济贸易仲裁委员会 / any PRC arbitration body
+Replace: Singapore International Arbitration Centre (SIAC)
+Apply INSERT 2 (Dispute Resolution) in full.
+
+REPLACEMENT 4 — Mediation References
+Source: Any Chinese mandatory mediation step / People's Mediation /
+        调解 / mediation committee references
+Action: REMOVE entirely.
+Note: Add to commentary — "Mandatory mediation under Chinese
+      procedure has no equivalent obligation in Singapore. The
+      dispute resolution clause has been rewritten to proceed
+      directly to SIAC arbitration."
+
+
+5.4 Mandatory Removals
+
+Remove without replacement — do not flag, do not parameterize:
+- References to Chinese government approval for contract validity
+- References to filing with Chinese authorities
+- References to PRC tax registration requirements
+- "In accordance with Chinese law and regulations" (replace with
+  specific Singapore statute where required, otherwise delete)
+- References to Chinese-language version prevailing over English
+  (Singapore contracts operate in English as the governing language)
+
+
+5.5 Certainty Hierarchy for Service Agreement Clauses
+
+Apply the four certainty levels from Block 3 as follows:
+
+FULL_AUTO clauses (generate complete text, no flags):
+- Governing law (Singapore)
+- Entire agreement clause
+- Severability
+- Notices (with standard Singapore address requirements)
+- Waiver
+- Counterparts
+- Force majeure (standard form)
+- GST clause (standard form)
+
+PARAMETERIZED clauses (generate structure, user completes values):
+- Payment terms (amount, due date, interest rate)
+- SIAC arbitration (number of arbitrators)
+- Limitation of liability cap (12 months is standard; user confirms)
+- IP ownership (confirm no pre-existing IP included)
+- UEN numbers for both parties
+- Service description and deliverables
+
+REFERENCE_ONLY clauses (insert with external reference):
+- GST rate (verify at iras.gov.sg — currently 9%)
+- SIAC Rules version (verify current rules at siac.org.sg)
+- PDPA obligations (verify current PDPC guidelines at pdpc.gov.sg)
+
+LAWYER_REVIEW clauses (draft to best practice, flag for review):
+- Limitation of liability (UCTA reasonableness test is fact-specific)
+- IP ownership where pre-existing IP is involved
+- SIAC arbitration where dispute value exceeds SGD 5,000,000
+  (consider whether Singapore courts are more appropriate)
+- Any clause with indemnity obligations
+
+
+5.6 Service Agreement Commentary Format
+
+Use this template for every clause adapted under Part 5:
+
+[CLAUSE X.X — REWRITE / INSERT / REMOVE — CERTAINTY LEVEL]
+Original: [describe source clause in one sentence, noting Chinese law basis]
+Change: [what was done — replaced / inserted / removed]
+Reason: [cite Singapore statute or rule from Part 5] — [plain English]
+CN→SG note: [one sentence on why this specific change is required for
+             the CN→SG corridor — not generic, specific to this clause]
+Action required: [NONE / USER INPUT REQUIRED / VERIFY / ⚠ LAWYER REVIEW]
+
+
