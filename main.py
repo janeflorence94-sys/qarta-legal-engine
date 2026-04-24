@@ -12,36 +12,53 @@ from fastapi.responses import FileResponse, JSONResponse
 from docx_builder import build_outputs
 from pipeline import adapt_contract
 
-OUTPUTS_DIR = Path(__file__).parent / "outputs"
-OUTPUTS_DIR.mkdir(exist_ok=True)
-
-JOBS_DIR = Path("/tmp/jobs")
-JOBS_DIR.mkdir(parents=True, exist_ok=True)
+# Both output .docx files and status JSON live together in /tmp/outputs/
+OUTPUTS_DIR = Path("/tmp/outputs")
+OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".docx", ".pdf"}
 
 
-# ── File-based job store ───────────────────────────────────────────────────────
+# ── File-based job store (/tmp/outputs/{job_id}_status.json) ──────────────────
 
-def _job_path(job_id: str) -> Path:
-    return JOBS_DIR / f"{job_id}.json"
-
-
-def _write_job(data: dict) -> None:
-    _job_path(data["job_id"]).write_text(json.dumps(data), encoding="utf-8")
+def _status_path(job_id: str) -> Path:
+    return OUTPUTS_DIR / f"{job_id}_status.json"
 
 
-def _read_job(job_id: str) -> dict | None:
-    path = _job_path(job_id)
+def _output_files(job_id: str) -> dict:
+    return {
+        "clean":      f"/outputs/{job_id}_clean.docx",
+        "redline":    f"/outputs/{job_id}_redline.docx",
+        "commentary": f"/outputs/{job_id}_commentary.docx",
+    }
+
+
+def _outputs_exist(job_id: str) -> bool:
+    return all(
+        (OUTPUTS_DIR / f"{job_id}_{suffix}.docx").exists()
+        for suffix in ("clean", "redline", "commentary")
+    )
+
+
+def _write_status(job_id: str, data: dict) -> None:
+    _status_path(job_id).write_text(json.dumps(data), encoding="utf-8")
+
+
+def _read_status(job_id: str) -> dict | None:
+    path = _status_path(job_id)
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
 
 
-def _update_job(job_id: str, updates: dict) -> None:
-    data = _read_job(job_id) or {"job_id": job_id}
+def _update_status(job_id: str, updates: dict) -> None:
+    data = _read_status(job_id) or {"job_id": job_id}
     data.update(updates)
-    _write_job(data)
+    _write_status(job_id, data)
+
 
 app = FastAPI(
     title="Qarta Legal Engine",
@@ -66,6 +83,7 @@ async def startup_event():
     print(f"AIRTABLE_API_KEY:  {'SET' if os.getenv('AIRTABLE_API_KEY')  else 'MISSING'}")
     print(f"AIRTABLE_BASE_ID:  {'SET' if os.getenv('AIRTABLE_BASE_ID')  else 'MISSING'}")
     print(f"Total env vars: {len(os.environ)}")
+    print(f"OUTPUTS_DIR: {OUTPUTS_DIR} (exists={OUTPUTS_DIR.exists()})")
     print("=== END ENV CHECK ===")
 
 
@@ -80,7 +98,7 @@ def _run_pipeline(
     company_name: str,
     source_filename: str,
 ):
-    """Runs in a background thread. Writes status to /tmp/jobs/{job_id}.json."""
+    """Runs in a background thread. Writes status to /tmp/outputs/{job_id}_status.json."""
     print(f"[job {job_id}] Pipeline started.")
     try:
         result = adapt_contract(
@@ -101,13 +119,9 @@ def _run_pipeline(
             job_id=job_id,
         )
 
-        _update_job(job_id, {
+        _update_status(job_id, {
             "status": "complete",
-            "files": {
-                "clean":      f"/outputs/{job_id}_clean.docx",
-                "redline":    f"/outputs/{job_id}_redline.docx",
-                "commentary": f"/outputs/{job_id}_commentary.docx",
-            },
+            "files": _output_files(job_id),
             "metadata": {
                 "company":        company_name,
                 "corridor":       corridor,
@@ -120,7 +134,7 @@ def _run_pipeline(
         print(f"[job {job_id}] Complete.")
 
     except Exception as e:
-        _update_job(job_id, {"status": "error", "error": str(e)})
+        _update_status(job_id, {"status": "error", "error": str(e)})
         print(f"[job {job_id}] Error: {e}")
 
 
@@ -156,8 +170,7 @@ async def adapt(
 
     job_id = str(uuid.uuid4())
 
-    # Write initial job state before thread starts
-    _write_job({
+    _write_status(job_id, {
         "status":       "processing",
         "job_id":       job_id,
         "submitted_at": datetime.now(timezone.utc).isoformat(),
@@ -178,10 +191,25 @@ async def adapt(
 
 @app.get("/status/{job_id}")
 def status(job_id: str):
-    job = _read_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
-    return JSONResponse(job)
+    # 1. Output files exist → job is complete regardless of status file
+    if _outputs_exist(job_id):
+        # Refresh status file so it reflects reality after a redeploy
+        stored = _read_status(job_id) or {}
+        if stored.get("status") != "complete":
+            _update_status(job_id, {
+                "status": "complete",
+                "files":  _output_files(job_id),
+                "recovered_after_redeploy": True,
+            })
+        return JSONResponse(_read_status(job_id))
+
+    # 2. Status file exists (processing or error)
+    stored = _read_status(job_id)
+    if stored:
+        return JSONResponse(stored)
+
+    # 3. Neither exists
+    raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
 
 
 @app.get("/outputs/{filename}")
