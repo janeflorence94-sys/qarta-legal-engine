@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 import anthropic
+import httpx
 from docx import Document as DocxDocument
 from PyPDF2 import PdfReader
 
@@ -175,7 +176,10 @@ Please adapt this contract and produce exactly three outputs separated by these 
 [full commentary with four-field format per clause]"""
 
     # Step 5 — Call Claude API (streaming) with prompt caching on the static system prompt
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = anthropic.Anthropic(
+        api_key=os.getenv("ANTHROPIC_API_KEY"),
+        timeout=httpx.Timeout(600.0, connect=10.0),
+    )
 
     system_block = [
         {
@@ -186,7 +190,8 @@ Please adapt this contract and produce exactly three outputs separated by these 
     ]
 
     def _call_claude_streaming(messages: list) -> str:
-        """Stream a Claude response, printing a dot every 5 seconds as a heartbeat."""
+        """Stream a Claude response, printing a dot every 5 seconds as a heartbeat.
+        Returns whatever was received — caller checks for completeness."""
         result_parts = []
         stop_event = threading.Event()
 
@@ -207,6 +212,9 @@ Please adapt this contract and produce exactly three outputs separated by these 
             ) as stream:
                 for text in stream.text_stream:
                     result_parts.append(text)
+        except Exception as e:
+            # Connection dropped mid-stream — return whatever arrived
+            print(f"\n[pipeline] Stream interrupted: {e}")
         finally:
             stop_event.set()
             dot_thread.join(timeout=1)
@@ -214,30 +222,51 @@ Please adapt this contract and produce exactly three outputs separated by these 
 
         return "".join(result_parts)
 
-    print("[pipeline] Calling Claude API... (this takes 30-60 seconds)")
-    response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
-    print("[pipeline] Claude response received, parsing...")
-
-    # Step 6 — If truncated before OUTPUT 2 or OUTPUT 3, continue in the same conversation
-    missing = [h for h in OUTPUT_HEADERS if h not in response_text]
-    if missing:
-        present = [h for h in OUTPUT_HEADERS if h in response_text]
-        print(f"[pipeline] Response truncated — has {present}, missing {missing}. Retrying continuation...")
-
-        continuation_prompt = (
-            f"Your previous response was cut off. You generated {present} but stopped before "
-            f"{missing}. Please continue exactly from where you left off and generate "
-            f"the remaining sections, starting with the next missing header."
+    def _continuation(partial: str) -> str:
+        """Ask Claude to continue from where it left off."""
+        present = [h for h in OUTPUT_HEADERS if h in partial]
+        missing = [h for h in OUTPUT_HEADERS if h not in partial]
+        print(f"[pipeline] Continuation: have {present}, need {missing}")
+        prompt = (
+            f"Your previous response was cut off. You generated {present} but stopped "
+            f"before {missing}. Please continue exactly from where you left off and "
+            f"generate the remaining sections, starting with the next missing header."
         )
-
-        continuation = _call_claude_streaming([
-            {"role": "user", "content": user_message},
-            {"role": "assistant", "content": response_text},
-            {"role": "user", "content": continuation_prompt},
+        result = _call_claude_streaming([
+            {"role": "user",      "content": user_message},
+            {"role": "assistant", "content": partial},
+            {"role": "user",      "content": prompt},
         ])
+        return partial + "\n\n" + result
 
-        print("[pipeline] Continuation received, parsing combined response...")
-        response_text = response_text + "\n\n" + continuation
+    # Step 6 — First call; retry/continue on drop or truncation
+    print("[pipeline] Calling Claude API... (this may take 2-3 minutes for full output)")
+    response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
+    print(f"[pipeline] Received {len(response_text)} chars.")
+
+    missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+
+    if missing:
+        has_any = any(h in response_text for h in OUTPUT_HEADERS)
+
+        if not has_any:
+            # Connection dropped before any output — retry the full call once
+            print("[pipeline] No output received. Retrying full call...")
+            response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
+            missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+
+        if missing:
+            # Partial output — continue from what we have
+            print(f"[pipeline] Missing sections {missing}. Running continuation...")
+            response_text = _continuation(response_text)
+
+        # Final check — second continuation if still incomplete
+        still_missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+        if still_missing:
+            print(f"[pipeline] Still missing {still_missing}. Running second continuation...")
+            response_text = _continuation(response_text)
+
+    print("[pipeline] All sections present, parsing...")
 
     # Step 7 — Parse and return (include record count for API metadata)
     parsed = _parse_response(response_text)
