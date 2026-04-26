@@ -97,6 +97,7 @@ def _run_pipeline(
     doc_type: str,
     company_name: str,
     source_filename: str,
+    deal_profile: dict = None,
 ):
     """Runs in a background thread. Writes status to /tmp/outputs/{job_id}_status.json."""
     print(f"[job {job_id}] Pipeline started.")
@@ -107,6 +108,7 @@ def _run_pipeline(
             corridor=corridor,
             doc_type=doc_type,
             company_name=company_name,
+            deal_profile=deal_profile or {},
         )
 
         build_outputs(
@@ -155,7 +157,7 @@ def test_nda():
     import requests
     key  = os.getenv("AIRTABLE_API_KEY")
     base = os.getenv("AIRTABLE_BASE_ID")
-    url  = f"https://api.airtable.com/v0/{base}/NDA%20Clauses%20(Demo%20Tier)?maxRecords=1"
+    url  = f"https://api.airtable.com/v0/{base}/NDA%20Clauses%20%28Demo%20Tier%29?maxRecords=1"
     r = requests.get(url, headers={"Authorization": f"Bearer {key}"})
     return {
         "status_code": r.status_code,
@@ -172,6 +174,7 @@ async def adapt(
     corridor: str = Form(...),
     doc_type: str = Form(...),
     company_name: str = Form(...),
+    deal_profile: str = Form(default="{}"),
 ):
     suffix = Path(file.filename).suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
@@ -184,6 +187,11 @@ async def adapt(
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
+    try:
+        deal_profile_dict = json.loads(deal_profile) if deal_profile else {}
+    except (json.JSONDecodeError, TypeError):
+        deal_profile_dict = {}
+
     job_id = str(uuid.uuid4())
 
     _write_status(job_id, {
@@ -194,7 +202,7 @@ async def adapt(
 
     thread = threading.Thread(
         target=_run_pipeline,
-        args=(job_id, file_bytes, suffix.lstrip("."), corridor, doc_type, company_name, file.filename),
+        args=(job_id, file_bytes, suffix.lstrip("."), corridor, doc_type, company_name, file.filename, deal_profile_dict),
         daemon=True,
     )
     thread.start()
