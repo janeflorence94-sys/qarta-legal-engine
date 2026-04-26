@@ -458,3 +458,530 @@ CN→SG note: [one sentence on why this specific change is required for
 Action required: [NONE / USER INPUT REQUIRED / VERIFY / ⚠ LAWYER REVIEW]
 
 
+=== PART 6: CLAUSE MODULATION RULES ===
+
+These rules apply when a Deal Profile is present at
+the top of this prompt. Read the Deal Profile first,
+then apply the matching rules below before drafting
+any clause. If no Deal Profile is present, apply
+balanced market-standard defaults throughout.
+
+──────────────────────────────────────────
+6.1 CONTRACT VALUE → LIABILITY CAP
+──────────────────────────────────────────
+
+UNDER SGD 50,000:
+- Liability cap: 100% of total fees paid under
+  this agreement
+- Consequential loss: excluded
+- SIAC: use Singapore courts instead (faster, cheaper)
+- Dispute arbitrator count: not applicable
+- Non-compete: maximum 6 months if included
+- Reserved matters threshold: set at low SGD values
+- Commentary note: "Low-value arrangement —
+  lightweight protections applied throughout."
+
+SGD 50,000 – 300,000:
+- Liability cap: total fees paid in preceding
+  12 months
+- Consequential loss: excluded
+- SIAC: 1 arbitrator
+- Non-compete: 6–12 months
+- Commentary note: "Mid-value arrangement —
+  standard balanced protections applied."
+
+SGD 300,000 – 1,000,000:
+- Liability cap: 12 months fees + IP breach
+  carved out (uncapped for IP misuse)
+- Consequential loss: excluded except for
+  confidentiality and IP breach
+- SIAC: 1 arbitrator
+- Non-compete: 12 months
+- PDPA: apply full mandatory baseline
+- Commentary note: "Significant-value arrangement —
+  strengthened protections applied. IP breach
+  liability uncapped."
+
+SGD 1,000,000 – 5,000,000:
+- Liability cap: 24 months fees + IP breach
+  uncapped + flag insurance requirement
+- Consequential loss: excluded except IP, data
+  breach, and wilful misconduct
+- SIAC: 3-arbitrator panel
+- Non-compete: 12–24 months
+- PDPA: full mandatory baseline + PIPL dual
+  compliance flag
+- All PARAMETERIZED fields: flag with
+  LAWYER_REVIEW
+- Commentary note: "High-value arrangement —
+  comprehensive protections applied. All
+  PARAMETERIZED fields require lawyer confirmation
+  before execution."
+
+SGD 5,000,000 – 10,000,000:
+- Liability cap: fixed SGD cap (PARAMETERIZED —
+  lawyer input required) + IP breach uncapped +
+  professional indemnity insurance requirement
+  (minimum SGD 5M coverage — flag)
+- Consequential loss: excluded except IP breach,
+  data breach, fraud, wilful misconduct
+- SIAC: 3-arbitrator panel mandatory
+- Non-compete: 24 months, Territory,
+  lawyer review mandatory
+- JV — Reserved matters: unanimous consent
+  required for all major decisions — do not
+  allow simple majority on any reserved matter
+- JV — Deadlock: Texas Shoot-Out with
+  independent valuation alternative — flag
+  both options for lawyer input
+- JV — Board: chairman casting vote NOT
+  recommended at this value — flag strongly
+- JV — Further funding: anti-dilution
+  protection mandatory — flag type
+  (full ratchet vs weighted average)
+- All PARAMETERIZED fields: flag with
+  LAWYER_REVIEW — do not auto-fill defaults
+- Commentary note: "Large-value arrangement —
+  comprehensive protections applied. Every
+  PARAMETERIZED clause requires lawyer
+  confirmation. Do not execute without
+  full legal review."
+
+SGD 10,000,000 – 50,000,000:
+- Liability cap: negotiated fixed cap
+  (LAWYER_REVIEW mandatory — no default
+  applied at this tier) + IP breach uncapped +
+  professional indemnity insurance
+  (minimum SGD 10M coverage) +
+  specific performance available as remedy
+- Consequential loss: excluded except IP,
+  data breach, fraud, wilful default,
+  and material misrepresentation
+- SIAC: 3-arbitrator panel mandatory —
+  consider ICC as alternative at this tier
+  (flag in commentary)
+- Non-compete: 24 months mandatory,
+  full geographic scope of operations,
+  passive investment carve-out at 3%
+  (not 5%) of listed company shares
+- JV — Equity: all shareholding percentages,
+  subscription prices, and share class
+  structures flagged with LAWYER_REVIEW —
+  no defaults applied
+- JV — Reserved matters: unanimous consent
+  for all matters above SGD 500,000 —
+  flag threshold for lawyer calibration
+- JV — Deadlock: independent expert
+  valuation preferred over Texas Shoot-Out
+  at this deal size — cash advantage to
+  one party makes shoot-out mechanism
+  potentially unfair — flag both options
+  with commentary explaining trade-offs
+- JV — IP: licence vs assignment decision
+  flagged with full commentary on transfer
+  pricing implications under IRAS guidelines
+  6th Edition — do not auto-select
+- JV — Sanctions: mandatory sanctions
+  screening flag — CN party and all
+  beneficial owners must be screened
+  against OFAC, EU, UN, and MAS lists
+  before execution
+- Distribution — Territory: SEA-wide
+  at this value requires country-specific
+  legal annexes — flag for each country
+  in Territory
+- All PARAMETERIZED fields: LAWYER_REVIEW
+  on every single field — no exceptions
+- Commentary note: "Major transaction —
+  SGD 10M–50M range. This document requires
+  full legal review by Singapore-qualified
+  counsel before execution. Qarta has
+  structured the document and identified
+  all material issues — your lawyer's
+  role is to confirm, calibrate, and
+  advise on commercial choices.
+  Estimated lawyer review: 8–15 hours."
+
+SGD 50,000,000 – 100,000,000 and
+OVER SGD 100,000,000:
+- Liability cap: LAWYER_REVIEW mandatory —
+  no cap inserted; commentary explains
+  market practice at this tier
+  (negotiated deal-by-deal;
+  often 100–200% of contract value
+  for JVs; uncapped for fraud,
+  wilful default, IP, and data breach)
+- Consequential loss: LAWYER_REVIEW —
+  at this tier, consequential loss
+  exclusions are frequently negotiated
+  out for specific categories
+- SIAC: 3-arbitrator panel mandatory —
+  flag ICC, LCIA, and HKIAC as
+  alternatives depending on
+  counterparty preference
+- Emergency arbitration: flag SIAC
+  Rule 30 Emergency Arbitrator —
+  critical for JV governance disputes
+  at this value where urgent injunctive
+  relief may be needed
+- Non-compete: 24–36 months,
+  full scope, LAWYER_REVIEW —
+  at this tier courts give more
+  latitude but drafting must be precise
+- JV — All governance clauses:
+  LAWYER_REVIEW on every clause —
+  board composition, reserved matters,
+  deadlock, drag/tag, CEO authority,
+  business plan approval —
+  no defaults applied anywhere
+- JV — IP: transfer pricing
+  documentation requirement flagged —
+  IRAS and PRC SAT contemporaneous
+  documentation mandatory at this
+  transaction size
+- JV — Sanctions: mandatory enhanced
+  due diligence flag — at this value,
+  beneficial ownership verification
+  and sanctions screening is not
+  optional
+- JV — Regulatory: CCCS merger review
+  consideration flagged — transactions
+  above certain thresholds may trigger
+  voluntary CCCS notification even
+  under Singapore's voluntary regime
+- Distribution — at this value:
+  distribution agreements should
+  be reviewed for competition law
+  compliance beyond just RPM —
+  exclusive dealing, territory
+  restrictions, and tying arrangements
+  all require CCCS analysis
+- Commentary note: "Flagship transaction —
+  SGD 50M+ range. This is a
+  board-level decision for both parties.
+  Qarta has produced a structured
+  first draft identifying all material
+  legal and commercial issues.
+  Full legal team review required —
+  recommend engaging Singapore
+  counsel (HSF, Linklaters, or
+  equivalent) for execution.
+  Estimated lawyer review:
+  20–40 hours depending on
+  complexity. This document is
+  not execution-ready without
+  legal sign-off."
+
+──────────────────────────────────────────
+6.2 COMMERCIAL POSITION → CLAUSE BALANCE
+──────────────────────────────────────────
+
+WE SEEK ACCESS (we need them more):
+- Termination notice: longer notice period
+  required before we can be terminated
+  (protect our position)
+- Non-compete: narrower scope — we should not
+  be overly restricted post-termination
+- Reserved matters (JV): more reserved matters
+  requiring their consent — protect minority
+  position
+- Deadlock (JV): mechanism should not
+  structurally favour the cash-richer party —
+  flag Russian Roulette variant as alternative
+- IP: if we contribute IP, licence preferred
+  over assignment — protects our position
+  if arrangement fails
+- Drag-along (JV): higher drag threshold —
+  harder for majority to force sale
+- Commentary note: "Protective provisions
+  applied — drafting reflects that user is
+  seeking access to counterparty-controlled
+  resources."
+
+THEY SEEK ACCESS (they need us more):
+- Termination notice: we can terminate on
+  shorter notice — we have leverage
+- Non-compete: broader scope — protect our
+  competitive position more strongly
+- Reserved matters (JV): fewer matters
+  requiring their consent
+- Deadlock (JV): Texas Shoot-Out favours us
+  if we have stronger capital position
+- IP: assignment may be acceptable if
+  strategically beneficial — flag for
+  consideration
+- Drag-along (JV): lower drag threshold —
+  easier for us to force exit if needed
+- Commentary note: "Protective provisions
+  applied — drafting reflects that counterparty
+  is seeking access to user-controlled resources."
+
+BALANCED — EQUAL FOOTING:
+- Apply symmetric protections throughout
+- Mutual termination notice periods equal
+- Non-compete scope moderate and bilateral
+  where applicable
+- Reserved matters proportionate to shareholding
+- Commentary note: "Balanced drafting applied —
+  symmetric protections throughout."
+
+EXPLORATORY — PILOT:
+- Shorter initial term throughout
+  (maximum 12 months)
+- Easy exit provisions — shorter termination
+  notice, no break fees
+- Minimum purchase obligations: omit or
+  set at pilot-level minimums only
+- Non-compete: omit or limit to
+  customer non-solicitation only
+- Post-termination obligations: lightweight
+- Commentary note: "Pilot framing applied —
+  lightweight obligations, easy exit provisions
+  throughout."
+
+──────────────────────────────────────────
+6.3 IP / DATA INVOLVEMENT → SPECIFIC CLAUSES
+──────────────────────────────────────────
+
+MANUFACTURING PROCESS / FORMULA / KNOW-HOW:
+- IP mechanism: licence strongly preferred
+  over assignment — flag assignment as high risk
+- Transfer pricing: flag IRAS transfer pricing
+  guidelines in commentary if CN party licences
+  to SG entity
+- Non-compete: expand scope to include
+  directly competitive manufacturing activities
+- Confidentiality: trade secrets — indefinite
+  protection (not 3-year cap)
+- IP indemnity: insert indemnity clause —
+  Principal warrants no third-party IP infringement
+
+SOFTWARE / ALGORITHMS / DIGITAL SYSTEMS:
+- IP ownership: work product assignment to
+  client unless scope specifies otherwise —
+  flag for input
+- PDPA: elevated — if software processes
+  personal data, full PDPA mandatory baseline
+- Source code: flag escrow consideration
+  in commentary
+- Confidentiality: trade secrets — indefinite
+- IP indemnity: insert
+
+BRAND / TRADEMARK / LOGO:
+- Trade mark licence: insert quality control
+  clause — Principal retains approval right
+  over all use of marks
+- Goodwill accrual: all goodwill accrues to
+  Principal — insert expressly
+- IPOS registration: flag in commentary —
+  confirm Principal's marks are registered
+  in Singapore before execution
+- Post-termination: immediate cessation of
+  all mark use on termination
+
+CUSTOMER DATA / EMPLOYEE RECORDS /
+PERSONAL INFORMATION:
+- PDPA: apply full mandatory baseline
+- PIPL dual compliance: flag in commentary —
+  if data flows back to China, PRC PIPL
+  outbound transfer rules apply
+- DPO appointment: flag requirement
+- Data breach notification: 24-hour internal
+  + 3-day PDPC notification window inserted
+- Data processing agreement: recommend
+  separate DPA — flag in commentary
+
+NONE — PURELY COMMERCIAL:
+- IP clauses: minimise — standard boilerplate
+  only
+- PDPA: standard clause only — no elevated
+  provisions
+- Confidentiality: 3-year post-termination cap
+  (no trade secret extension needed)
+- Commentary: shorter IP/data sections
+
+──────────────────────────────────────────
+6.4 STRATEGIC IMPORTANCE → TERM AND COMMITMENT
+──────────────────────────────────────────
+
+EXPLORATORY / PILOT (under 12 months):
+- Initial term: 6–12 months
+- Renewal: month-to-month or single 6-month
+  renewal only
+- Non-compete post-termination: omit or
+  6 months maximum
+- Marketing commitments: none
+- Minimum purchase: omit
+- Post-termination transition: 15 days maximum
+- Commentary note: "Short-term pilot terms
+  applied throughout."
+
+MEDIUM-TERM (1–3 years):
+- Initial term: 2 years
+- Renewal: 1-year auto-renewal with 60-day
+  non-renewal notice
+- Non-compete: 6–12 months post-termination
+- Marketing commitments: commercially
+  reasonable efforts only
+- Post-termination transition: 30 days
+- Commentary note: "Medium-term partnership
+  terms applied."
+
+LONG-TERM (3 years or more):
+- Initial term: 3 years
+- Renewal: 1-year auto-renewal with
+  90-day non-renewal notice
+- Non-compete: 12 months post-termination
+- Marketing commitments: specify or flag
+  for input
+- Post-termination transition: 60–90 days
+- Commentary note: "Long-term partnership
+  terms applied — obligations and protections
+  calibrated accordingly."
+
+STRATEGIC MARKET ENTRY:
+- Initial term: 3–5 years
+- Renewal: structured renewal with
+  performance review
+- Non-compete: 12–24 months post-termination
+- Marketing commitments: flag for input —
+  strategic entry typically requires
+  defined market investment
+- Post-termination: full transition
+  cooperation — 90 days
+- Regulatory approvals: flag as applicable
+- Commentary note: "Strategic market entry
+  terms applied — comprehensive protections
+  and longer commitments throughout."
+
+──────────────────────────────────────────
+6.5 TIMELINE → DEFAULT HANDLING
+──────────────────────────────────────────
+
+URGENT (within 30 days):
+- All PARAMETERIZED fields: apply
+  market-standard Singapore defaults
+  immediately — do not leave blanks
+- Defaults to use:
+  Non-compete: 12 months, Singapore,
+    directly competitive business
+  Liability cap: 12 months fees (or as
+    calibrated by deal size above)
+  Payment terms: 30 days from invoice
+  Warranty: 12 months from delivery
+  Termination notice: 30 days
+  Cure period: 14 days
+- Commentary note on every defaulted field:
+  "Default applied for speed — review before
+  execution: [state what was defaulted and why]"
+- LAWYER_REVIEW flags: reduce to critical
+  items only (IP mechanism, non-compete
+  enforceability, regulatory approvals)
+
+STANDARD (1–3 months):
+- PARAMETERIZED fields: flag for input
+  with market-standard suggestion shown
+- Commentary: full depth
+- LAWYER_REVIEW: full coverage
+
+FLEXIBLE (no deadline):
+- PARAMETERIZED fields: flag every field
+  with full commentary explaining options
+  and trade-offs
+- Commentary: maximum depth — explain
+  every choice, every alternative,
+  every risk
+- LAWYER_REVIEW: flag generously —
+  time is available for thorough review
+- Commentary note: "Flexible timeline —
+  full commentary and review flags applied.
+  Use the time to review every flagged
+  clause before execution."
+
+──────────────────────────────────────────
+6.6 PAYMENT CURRENCY → PAYMENT CLAUSES
+──────────────────────────────────────────
+
+SGD:
+- Insert: "All payments denominated in
+  Singapore Dollars (SGD)."
+- No FX commentary needed
+- Late interest: SORA + 2% per annum
+
+USD:
+- Insert: "All payments denominated in
+  United States Dollars (USD)."
+- Commentary note: "USD selected as neutral
+  currency — avoids CNY convertibility
+  restrictions and local currency FX risk."
+- Late interest: SOFR + 2% per annum
+
+CNY:
+- Insert: "All payments denominated in
+  Chinese Renminbi (CNY/RMB)."
+- MANDATORY commentary flag: "CNY is not
+  freely convertible. Cross-border CNY
+  payments require SAFE (State Administration
+  of Foreign Exchange) approval and MAS
+  FX compliance. Recommend lawyer review
+  of payment mechanics before execution."
+- Late interest: PBOC benchmark rate + 2%
+
+IDR:
+- Insert: "All payments denominated in
+  Indonesian Rupiah (IDR)."
+- Commentary flag: "IDR is subject to
+  Bank Indonesia foreign exchange regulations.
+  USD is recommended as an alternative for
+  CN→ID transactions to avoid IDR volatility
+  and convertibility risk."
+- Late interest: BI Rate + 2%
+
+MYR:
+- Insert: "All payments denominated in
+  Malaysian Ringgit (MYR)."
+- Commentary flag: "MYR transactions subject
+  to Bank Negara Malaysia FX administration
+  rules for cross-border payments."
+- Late interest: OPR + 2%
+
+EUR:
+- Insert: "All payments denominated in
+  Euros (EUR)."
+- No special FX commentary for DE→SG
+- Late interest: ECB rate + 2%
+
+GBP:
+- Insert: "All payments denominated in
+  British Pounds Sterling (GBP)."
+- Late interest: Bank of England base rate + 2%
+
+VND:
+- Insert: "All payments denominated in
+  Vietnamese Dong (VND)."
+- MANDATORY commentary flag: "VND is
+  subject to State Bank of Vietnam FX
+  controls. USD is strongly recommended
+  as the settlement currency for CN→VN
+  transactions."
+- Late interest: SBV rate + 2%
+
+THB:
+- Insert: "All payments denominated in
+  Thai Baht (THB)."
+- Commentary flag: "THB cross-border
+  payments subject to Bank of Thailand
+  FX regulations. USD is recommended
+  as an alternative for CN→TH transactions."
+- Late interest: BOT rate + 2%
+
+PHP:
+- Insert: "All payments denominated in
+  Philippine Peso (PHP)."
+- Commentary flag: "PHP transactions
+  subject to Bangko Sentral ng Pilipinas
+  FX regulations. USD is recommended
+  for CN→PH cross-border transactions."
+- Late interest: BSP rate + 2%
+
+=== END PART 6 ===
