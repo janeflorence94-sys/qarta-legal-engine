@@ -104,77 +104,250 @@ def _parse_response(response_text: str) -> dict:
     return parts
 
 
-SIZE_LABELS = {
-    "under_50K":  "Under SGD 50,000",
-    "50K_300K":   "SGD 50,000 – 300,000",
-    "300K_1M":    "SGD 300,000 – 1,000,000",
-    "1M_5M":      "SGD 1,000,000 – 5,000,000",
-    "5M_10M":     "SGD 5,000,000 – 10,000,000",
-    "10M_50M":    "SGD 10,000,000 – 50,000,000",
-    "50M_100M":   "SGD 50,000,000 – 100,000,000",
-    "over_100M":  "Over SGD 100,000,000",
-}
-LEVERAGE_LABELS = {
-    "we_seek_access":   "We are seeking access to something they control",
-    "they_seek_access": "They are seeking access to something we control",
-    "balanced":         "Both parties bring something the other needs — equal footing",
-    "exploratory":      "Exploratory — neither party fully committed yet",
-}
-IMPORTANCE_LABELS = {
-    "pilot":            "Exploratory or pilot — under 12 months",
-    "medium_term":      "Medium-term partnership — 1 to 3 years",
-    "long_term":        "Long-term core arrangement — 3 years or more",
-    "strategic_entry":  "Strategic market entry — building permanent presence",
-}
-TIMELINE_LABELS = {
-    "urgent":    "Urgent — within 30 days",
-    "normal":    "Standard — 1 to 3 months",
-    "flexible":  "Flexible — no deadline pressure",
-}
-
 
 def build_deal_profile_block(deal_profile: dict) -> str:
-    """Convert a deal profile dict into a system prompt block."""
+    """Build an inline calibration block from the deal profile.
+    Rules are injected directly — not referenced — so Claude acts on them immediately."""
     if not deal_profile:
         return ""
 
+    size_labels = {
+        "under_50K":  "Under SGD 50,000",
+        "50K_300K":   "SGD 50,000 – 300,000",
+        "300K_1M":    "SGD 300,000 – 1,000,000",
+        "1M_5M":      "SGD 1,000,000 – 5,000,000",
+        "5M_10M":     "SGD 5,000,000 – 10,000,000",
+        "10M_50M":    "SGD 10,000,000 – 50,000,000",
+        "50M_100M":   "SGD 50,000,000 – 100,000,000",
+        "over_100M":  "Over SGD 100,000,000",
+    }
+    leverage_labels = {
+        "we_seek_access":   "We seek access to something they control",
+        "they_seek_access": "They seek access to something we control",
+        "balanced":         "Both parties bring something the other needs",
+        "exploratory":      "Exploratory — neither party fully committed",
+    }
+    importance_labels = {
+        "pilot":           "Pilot — under 12 months",
+        "medium_term":     "Medium-term — 1 to 3 years",
+        "long_term":       "Long-term — 3 years or more",
+        "strategic_entry": "Strategic market entry",
+    }
+    timeline_labels = {
+        "urgent":   "Urgent — within 30 days",
+        "normal":   "Standard — 1 to 3 months",
+        "flexible": "Flexible — no deadline",
+    }
+
+    instructions = []
+    size     = deal_profile.get("deal_size", "")
+    leverage = deal_profile.get("leverage", "")
+    ip_types = deal_profile.get("ip_types", [])
+    importance = deal_profile.get("strategic_importance", "")
+    timeline   = deal_profile.get("timeline_urgency", "")
+    currency   = deal_profile.get("payment_currency", "")
+
+    # ── LIABILITY CAP & DEAL-SIZE RULES ──────────────────────────────────────
+    if size == "under_50K":
+        instructions += [
+            "LIABILITY CAP: 100% of total fees paid. Use Singapore courts, not SIAC.",
+            "NON-COMPETE: Maximum 6 months if included.",
+            "LAWYER_REVIEW: Minimal flags — lightweight document.",
+            "COMMENTARY NOTE: 'Low-value arrangement — lightweight protections applied throughout.'",
+        ]
+    elif size == "50K_300K":
+        instructions += [
+            "LIABILITY CAP: Total fees paid in preceding 12 months.",
+            "SIAC: 1 arbitrator.",
+            "NON-COMPETE: 6–12 months.",
+            "COMMENTARY NOTE: 'Mid-value arrangement — standard balanced protections applied.'",
+        ]
+    elif size == "300K_1M":
+        instructions += [
+            "LIABILITY CAP: 12 months fees + IP breach carved out as uncapped.",
+            "SIAC: 1 arbitrator.",
+            "NON-COMPETE: 12 months.",
+            "PDPA: Apply full mandatory baseline.",
+            "COMMENTARY NOTE: 'Significant-value arrangement — strengthened protections applied. IP breach liability uncapped.'",
+        ]
+    elif size == "1M_5M":
+        instructions += [
+            "LIABILITY CAP: 24 months fees + IP breach uncapped + flag insurance requirement.",
+            "SIAC: 3-arbitrator panel.",
+            "NON-COMPETE: 12–24 months.",
+            "PDPA: Full baseline + PIPL dual compliance flag.",
+            "LAWYER_REVIEW: Flag all PARAMETERIZED clauses.",
+            "COMMENTARY NOTE: 'High-value arrangement — comprehensive protections. All PARAMETERIZED clauses require lawyer confirmation.'",
+        ]
+    elif size == "5M_10M":
+        instructions += [
+            "LIABILITY CAP: Fixed SGD cap — LAWYER_REVIEW mandatory, no default. IP breach uncapped. Flag PI insurance minimum SGD 5M.",
+            "SIAC: 3-arbitrator panel mandatory.",
+            "NON-COMPETE: 24 months mandatory. Lawyer review required.",
+            "JV GOVERNANCE: Unanimous consent for all reserved matters. No chairman casting vote.",
+            "ANTI-DILUTION: Flag as mandatory.",
+            "LAWYER_REVIEW: Every single PARAMETERIZED field — no exceptions.",
+            "COMMENTARY NOTE: 'Large-value arrangement. Every PARAMETERIZED clause requires lawyer confirmation. Do not execute without full legal review.'",
+        ]
+    elif size == "10M_50M":
+        instructions += [
+            "LIABILITY CAP: LAWYER_REVIEW MANDATORY — do not insert any default cap. Flag ICC as SIAC alternative.",
+            "SIAC: 3-arbitrator panel mandatory.",
+            "NON-COMPETE: 24 months mandatory. Full geographic scope. 3% passive investment carve-out.",
+            "SANCTIONS: Flag mandatory sanctions screening — CN party and all beneficial owners against OFAC, EU, UN, MAS lists.",
+            "IRAS: Flag transfer pricing documentation requirement — 6th Edition guidelines.",
+            "LAWYER_REVIEW: Apply to EVERY PARAMETERIZED field without exception. Do not auto-fill any default.",
+            "COMMENTARY NOTE: 'Major transaction — SGD 10M–50M range. This document requires full legal review by Singapore-qualified counsel before execution. Qarta has structured the document and identified all material issues. Estimated lawyer review: 8–15 hours.'",
+        ]
+    elif size in ("50M_100M", "over_100M"):
+        instructions += [
+            "LIABILITY CAP: Do not insert any cap — LAWYER_REVIEW only. Explain market practice at this tier in commentary.",
+            "SIAC: 3-arbitrator mandatory. Flag ICC, LCIA, HKIAC as alternatives.",
+            "EMERGENCY ARBITRATION: Flag SIAC Rule 30 Emergency Arbitrator.",
+            "CCCS: Flag merger review consideration.",
+            "SANCTIONS: Enhanced due diligence flag — beneficial ownership verification mandatory.",
+            "LAWYER_REVIEW: Apply to every clause — no defaults anywhere.",
+            "COMMENTARY NOTE: 'Flagship transaction — SGD 50M+ range. Full legal team review required. Recommend engaging Singapore counsel (HSF, Linklaters, or equivalent). Estimated lawyer review: 20–40 hours. This document is not execution-ready without legal sign-off.'",
+        ]
+
+    # ── LEVERAGE / COMMERCIAL POSITION ────────────────────────────────────────
+    if leverage == "we_seek_access":
+        instructions.append(
+            "COMMERCIAL POSITION: We seek access — apply protective provisions in our favour. "
+            "Longer termination notice before we can be terminated. "
+            "Narrower non-compete scope post-termination. "
+            "More reserved matters requiring their consent."
+        )
+    elif leverage == "they_seek_access":
+        instructions.append(
+            "COMMERCIAL POSITION: They seek access — we have leverage. "
+            "Shorter termination notice for us. Broader non-compete scope. "
+            "Fewer reserved matters requiring their consent."
+        )
+    elif leverage == "exploratory":
+        instructions.append(
+            "COMMERCIAL POSITION: Exploratory — apply pilot framing. "
+            "Short terms, easy exit, minimal commitments, no long-tail non-competes."
+        )
+
+    # ── IP / DATA TYPES ───────────────────────────────────────────────────────
+    if ip_types and "none" not in ip_types:
+        if "manufacturing_process" in ip_types:
+            instructions.append(
+                "IP — MANUFACTURING PROCESS: Licence strongly preferred over assignment. "
+                "Flag IRAS transfer pricing. Non-compete scope includes directly competitive manufacturing. "
+                "Trade secrets: indefinite protection. Insert IP indemnity clause."
+            )
+        if "software" in ip_types:
+            instructions.append(
+                "IP — SOFTWARE: Flag work product ownership for input. "
+                "PDPA elevated if software processes personal data. "
+                "Flag source code escrow. Trade secrets: indefinite protection."
+            )
+        if "trademark" in ip_types:
+            instructions.append(
+                "IP — TRADEMARK: Insert quality control clause. "
+                "All goodwill accrues to Principal — insert expressly. "
+                "Flag IPOS registration status in commentary. "
+                "Post-termination: immediate cessation of all mark use."
+            )
+        if "personal_data" in ip_types or "data" in " ".join(ip_types).lower():
+            instructions.append(
+                "IP — PERSONAL DATA: Apply full PDPA mandatory baseline. "
+                "Flag PIPL dual compliance. Flag DPO appointment. "
+                "Insert 24-hour internal + 3-day PDPC breach notification. "
+                "Recommend separate DPA."
+            )
+    else:
+        instructions.append(
+            "IP/DATA: None involved — standard boilerplate only. "
+            "No elevated IP or PDPA provisions."
+        )
+
+    # ── STRATEGIC IMPORTANCE / TERM ───────────────────────────────────────────
+    if importance == "pilot":
+        instructions.append(
+            "TERM: 6–12 months initial term. Easy exit. No marketing commitments. "
+            "No minimum purchase. Non-compete: omit or 6 months maximum."
+        )
+    elif importance == "medium_term":
+        instructions.append(
+            "TERM: 2 years initial. 1-year renewal with 60-day notice. "
+            "Non-compete: 6–12 months. Commercially reasonable efforts standard."
+        )
+    elif importance == "long_term":
+        instructions.append(
+            "TERM: 3 years initial. 1-year renewal with 90-day notice. "
+            "Non-compete: 12 months. 60–90 day post-termination transition."
+        )
+    elif importance == "strategic_entry":
+        instructions.append(
+            "TERM: 3–5 years initial. Performance-reviewed renewal. "
+            "Non-compete: 12–24 months. 90-day post-termination transition. "
+            "Flag regulatory approvals."
+        )
+
+    # ── TIMELINE ──────────────────────────────────────────────────────────────
+    if timeline == "urgent":
+        instructions.append(
+            "TIMELINE URGENT: Auto-fill ALL PARAMETERIZED fields with market-standard Singapore defaults. "
+            "Add commentary note on every defaulted field: 'Default applied for speed — review before execution.' "
+            "Reduce LAWYER_REVIEW to critical items only."
+        )
+    elif timeline == "flexible":
+        instructions.append(
+            "TIMELINE FLEXIBLE: Flag every PARAMETERIZED field with full commentary explaining options "
+            "and trade-offs. Apply LAWYER_REVIEW generously. Maximum depth throughout."
+        )
+
+    # ── PAYMENT CURRENCY ──────────────────────────────────────────────────────
+    currency_map = {
+        "SGD": "Singapore Dollars (SGD). Late interest: SORA + 2% per annum.",
+        "USD": "United States Dollars (USD). Note: USD selected as neutral currency — avoids CNY convertibility restrictions.",
+        "CNY": "Chinese Renminbi (CNY). MANDATORY FLAG: CNY is not freely convertible. Cross-border CNY payments require SAFE approval and MAS FX compliance. Lawyer review of payment mechanics required.",
+        "IDR": "Indonesian Rupiah (IDR). FLAG: IDR subject to Bank Indonesia FX regulations. USD recommended as alternative.",
+        "MYR": "Malaysian Ringgit (MYR). FLAG: Subject to Bank Negara Malaysia FX administration rules.",
+        "VND": "Vietnamese Dong (VND). MANDATORY FLAG: VND subject to State Bank of Vietnam FX controls. USD strongly recommended.",
+        "THB": "Thai Baht (THB). FLAG: Subject to Bank of Thailand FX regulations.",
+        "PHP": "Philippine Peso (PHP). FLAG: Subject to Bangko Sentral ng Pilipinas FX regulations. USD recommended.",
+        "EUR": "Euros (EUR).",
+        "GBP": "British Pounds Sterling (GBP).",
+    }
+    if currency in currency_map:
+        instructions.append(f"PAYMENT CURRENCY: {currency_map[currency]}")
+
+    # ── ASSEMBLE BLOCK ────────────────────────────────────────────────────────
     lines = [
-        "=== DEAL PROFILE — READ BEFORE DRAFTING ===",
+        "╔══════════════════════════════════════════════════╗",
+        "║  DEAL PROFILE — MANDATORY CALIBRATION RULES      ║",
+        "║  READ AND APPLY BEFORE DRAFTING ANY CLAUSE        ║",
+        "╚══════════════════════════════════════════════════╝",
         "",
-        "The following deal context has been provided by the user.",
-        "You MUST apply the clause modulation rules in Part 6 of",
-        "the style guide based on every field below.",
-        "Do not use generic defaults — calibrate every",
-        "PARAMETERIZED clause to this specific deal profile.",
+        "The following instructions OVERRIDE all generic defaults",
+        "in the style guide. Apply every rule below without exception.",
         "",
     ]
 
-    if "deal_size" in deal_profile:
-        lines.append(f"CONTRACT VALUE: {SIZE_LABELS.get(deal_profile['deal_size'], deal_profile['deal_size'])}")
+    if size:
+        lines.append(f"CONTRACT VALUE:        {size_labels.get(size, size)}")
+    if leverage:
+        lines.append(f"COMMERCIAL POSITION:   {leverage_labels.get(leverage, leverage)}")
+    if ip_types:
+        lines.append(f"IP / DATA:             {', '.join(ip_types)}")
+    if importance:
+        lines.append(f"STRATEGIC IMPORTANCE:  {importance_labels.get(importance, importance)}")
+    if timeline:
+        lines.append(f"TIMELINE:              {timeline_labels.get(timeline, timeline)}")
+    if currency:
+        lines.append(f"PAYMENT CURRENCY:      {currency}")
 
-    if "leverage" in deal_profile:
-        lines.append(f"COMMERCIAL POSITION: {LEVERAGE_LABELS.get(deal_profile['leverage'], deal_profile['leverage'])}")
-
-    if "ip_types" in deal_profile and deal_profile["ip_types"]:
-        ip = deal_profile["ip_types"]
-        if "none" in ip or ip == ["none"]:
-            lines.append("IP / DATA INVOLVED: None — purely commercial arrangement")
-        else:
-            lines.append(f"IP / DATA INVOLVED: {', '.join(ip)}")
-
-    if "strategic_importance" in deal_profile:
-        lines.append(f"STRATEGIC IMPORTANCE: {IMPORTANCE_LABELS.get(deal_profile['strategic_importance'], deal_profile['strategic_importance'])}")
-
-    if "timeline_urgency" in deal_profile:
-        lines.append(f"TIMELINE TO SIGNING: {TIMELINE_LABELS.get(deal_profile['timeline_urgency'], deal_profile['timeline_urgency'])}")
-
-    if "payment_currency" in deal_profile:
-        lines.append(f"PAYMENT CURRENCY: {deal_profile['payment_currency']}")
-
+    lines += ["", "── CALIBRATION INSTRUCTIONS ──"]
+    lines += [f"• {instr}" for instr in instructions]
     lines += [
         "",
-        "APPLY PART 6 CLAUSE MODULATION RULES NOW.",
-        "=== END DEAL PROFILE ===",
+        "╔══════════════════════════════════════════════════╗",
+        "║  END DEAL PROFILE — NOW PROCEED TO DRAFT         ║",
+        "╚══════════════════════════════════════════════════╝",
         "",
     ]
     return "\n".join(lines)
