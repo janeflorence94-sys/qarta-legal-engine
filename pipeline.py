@@ -104,22 +104,100 @@ def _parse_response(response_text: str) -> dict:
     return parts
 
 
+SIZE_LABELS = {
+    "under_50K":  "Under SGD 50,000",
+    "50K_300K":   "SGD 50,000 – 300,000",
+    "300K_1M":    "SGD 300,000 – 1,000,000",
+    "1M_5M":      "SGD 1,000,000 – 5,000,000",
+    "5M_10M":     "SGD 5,000,000 – 10,000,000",
+    "10M_50M":    "SGD 10,000,000 – 50,000,000",
+    "50M_100M":   "SGD 50,000,000 – 100,000,000",
+    "over_100M":  "Over SGD 100,000,000",
+}
+LEVERAGE_LABELS = {
+    "we_seek_access":   "We are seeking access to something they control",
+    "they_seek_access": "They are seeking access to something we control",
+    "balanced":         "Both parties bring something the other needs — equal footing",
+    "exploratory":      "Exploratory — neither party fully committed yet",
+}
+IMPORTANCE_LABELS = {
+    "pilot":            "Exploratory or pilot — under 12 months",
+    "medium_term":      "Medium-term partnership — 1 to 3 years",
+    "long_term":        "Long-term core arrangement — 3 years or more",
+    "strategic_entry":  "Strategic market entry — building permanent presence",
+}
+TIMELINE_LABELS = {
+    "urgent":    "Urgent — within 30 days",
+    "normal":    "Standard — 1 to 3 months",
+    "flexible":  "Flexible — no deadline pressure",
+}
+
+
+def build_deal_profile_block(deal_profile: dict) -> str:
+    """Convert a deal profile dict into a system prompt block."""
+    if not deal_profile:
+        return ""
+
+    lines = [
+        "=== DEAL PROFILE — READ BEFORE DRAFTING ===",
+        "",
+        "The following deal context has been provided by the user.",
+        "You MUST apply the clause modulation rules in Part 6 of",
+        "the style guide based on every field below.",
+        "Do not use generic defaults — calibrate every",
+        "PARAMETERIZED clause to this specific deal profile.",
+        "",
+    ]
+
+    if "deal_size" in deal_profile:
+        lines.append(f"CONTRACT VALUE: {SIZE_LABELS.get(deal_profile['deal_size'], deal_profile['deal_size'])}")
+
+    if "leverage" in deal_profile:
+        lines.append(f"COMMERCIAL POSITION: {LEVERAGE_LABELS.get(deal_profile['leverage'], deal_profile['leverage'])}")
+
+    if "ip_types" in deal_profile and deal_profile["ip_types"]:
+        ip = deal_profile["ip_types"]
+        if "none" in ip or ip == ["none"]:
+            lines.append("IP / DATA INVOLVED: None — purely commercial arrangement")
+        else:
+            lines.append(f"IP / DATA INVOLVED: {', '.join(ip)}")
+
+    if "strategic_importance" in deal_profile:
+        lines.append(f"STRATEGIC IMPORTANCE: {IMPORTANCE_LABELS.get(deal_profile['strategic_importance'], deal_profile['strategic_importance'])}")
+
+    if "timeline_urgency" in deal_profile:
+        lines.append(f"TIMELINE TO SIGNING: {TIMELINE_LABELS.get(deal_profile['timeline_urgency'], deal_profile['timeline_urgency'])}")
+
+    if "payment_currency" in deal_profile:
+        lines.append(f"PAYMENT CURRENCY: {deal_profile['payment_currency']}")
+
+    lines += [
+        "",
+        "APPLY PART 6 CLAUSE MODULATION RULES NOW.",
+        "=== END DEAL PROFILE ===",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def adapt_contract(
     file_bytes: bytes,
     file_ext: str,
     corridor: str,
     doc_type: str,
     company_name: str,
+    deal_profile: dict = None,
 ) -> dict:
     """
     Adapt a Chinese-law contract to Singapore-law compliance.
 
     Args:
-        file_bytes:   Raw bytes of the uploaded contract file.
-        file_ext:     File extension — 'docx' or 'pdf' (without dot).
-        corridor:     Localisation corridor, e.g. 'CN_SG'.
-        doc_type:     Document type key, e.g. 'employment_contract'.
-        company_name: Client company name for contract header.
+        file_bytes:    Raw bytes of the uploaded contract file.
+        file_ext:      File extension — 'docx' or 'pdf' (without dot).
+        corridor:      Localisation corridor, e.g. 'CN_SG'.
+        doc_type:      Document type key, e.g. 'employment_contract'.
+        company_name:  Client company name for contract header.
+        deal_profile:  Optional dict of deal context fields for clause modulation.
 
     Returns:
         dict with keys 'clean', 'redline', 'commentary' (all str).
@@ -135,10 +213,14 @@ def adapt_contract(
         raise ValueError(f"Unsupported file format '.{ext}'. Only .docx and .pdf are accepted.")
     print(f"[pipeline] Extracted {len(contract_text)} chars from .{ext} file.")
 
-    # Step 2 — Load system prompt blocks
+    # Step 2 — Load system prompt blocks + deal profile
     print("[pipeline] Loading prompts...")
     system_prompt = _load_system_prompt()
     print(f"[pipeline] Prompts loaded ({len(system_prompt)} chars).")
+
+    deal_profile_block = build_deal_profile_block(deal_profile or {})
+    if deal_profile_block:
+        print(f"[pipeline] Deal profile injected ({len(deal_profile_block)} chars).")
 
     # Step 3 — Load LCM + strategy records from Airtable
     print("[pipeline] Loading LCM records from Airtable...")
@@ -181,6 +263,7 @@ Please adapt this contract and produce exactly three outputs separated by these 
         timeout=httpx.Timeout(600.0, connect=10.0),
     )
 
+    # Static style guide is cached; dynamic deal profile appended without cache
     system_block = [
         {
             "type": "text",
@@ -188,6 +271,8 @@ Please adapt this contract and produce exactly three outputs separated by these 
             "cache_control": {"type": "ephemeral"},
         }
     ]
+    if deal_profile_block:
+        system_block.append({"type": "text", "text": deal_profile_block})
 
     def _call_claude_streaming(messages: list) -> str:
         """Stream a Claude response, printing a dot every 5 seconds as a heartbeat.
