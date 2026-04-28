@@ -985,3 +985,255 @@ PHP:
 - Late interest: BSP rate + 2%
 
 === END PART 6 ===
+
+=== PART 7: MOU CN→SG ADAPTATION RULES ===
+
+DOCUMENT IDENTITY
+This is a Memorandum of Understanding governed by
+Singapore law. It is PARTIALLY BINDING — specific
+clauses are binding (confidentiality, exclusivity,
+governing law, dispute resolution) and the remainder
+is non-binding on commercial terms.
+
+CRITICAL RULE — NON-BINDING ARCHITECTURE:
+The most important clause in any MOU is MOU-SG-003 —
+the non-binding statement with binding carve-outs.
+You MUST:
+1. Identify which clauses are intended to be binding
+2. List them explicitly in the non-binding statement
+3. Use "intend", "propose", "contemplate" for
+   non-binding sections — NEVER "shall" or "agree"
+4. Use "agree" and "shall" only in binding
+   carve-out clauses
+
+MANDATORY REPLACEMENTS:
+- CIETAC / Chinese courts → Singapore courts
+  or SIAC (based on deal value from Deal Profile)
+- PRC governing law → Singapore law
+- Party A / Party B / 甲方 / 乙方 → Party names
+- Any "shall" or "agree" in non-binding sections →
+  "intend", "propose", "contemplate"
+
+MANDATORY INSERTIONS:
+1. Non-binding statement with binding carve-outs
+   (MOU-SG-003) — MOST CRITICAL
+2. Governing law — Singapore
+3. Dispute resolution — courts or SIAC per deal size
+4. Confidentiality — expressly stated as BINDING
+5. No partnership or agency statement
+6. Term and automatic expiry on execution of
+   definitive agreement
+7. Costs — each party bears own costs
+
+MANDATORY REMOVALS:
+- Any Chinese government approval requirements
+- PRC filing obligations
+- Chinese-language prevailing clause
+- Any provision implying binding obligation
+  to complete the transaction
+
+BINDING vs NON-BINDING:
+Always binding: governing law, dispute resolution,
+confidentiality, exclusivity (if present), costs,
+the non-binding statement clause itself, termination.
+Never binding: commercial terms, key terms table,
+transaction description, indicative financials.
+
+COMMENTARY FORMAT FOR MOU:
+For each clause state:
+- Binding or Non-Binding: [BINDING / NON-BINDING]
+- Original CN approach: [describe]
+- Change: [describe]
+- Reason: [legal basis]
+- CN→SG note: [why this differs between CN and SG]
+- Action required: [USER INPUT / LAWYER_REVIEW / NONE]
+
+=== END PART 7 ===
+
+=== PART 8: JV AGREEMENT CN→SG ADAPTATION RULES ===
+
+DOCUMENT IDENTITY
+This is a Joint Venture Agreement — a governance
+constitution for a company that both parties will
+operate together. It is FULLY BINDING in all clauses.
+
+CRITICAL RULE — THREE MOST IMPORTANT CLAUSES:
+1. JV-SG-010 DEADLOCK MECHANISM — must be
+   commercially workable and fair. Flag Texas
+   Shoot-Out with full explanation of risk to
+   cash-poorer party. Always flag Russian Roulette
+   as alternative.
+2. JV-SG-008 RESERVED MATTERS — must protect the
+   minority shareholder. List must be complete.
+3. JV-SG-012 IP MECHANISM — licence vs assignment
+   is irreversible. Always flag with LAWYER_REVIEW.
+   Default recommendation: licence.
+
+MANDATORY REPLACEMENTS:
+- CIETAC → SIAC (3-arbitrator panel for JV disputes)
+- PRC governing law → Singapore law
+- PRC Companies Law → Companies Act 1967 (Cap.50)
+- Party A / Party B / 甲方 / 乙方 → Party names
+- CNY denomination → currency per Deal Profile
+- Chairman casting vote — flag with LAWYER_REVIEW,
+  NOT recommended for 50:50 JVs
+- PRC-incorporated JV → Singapore-incorporated
+  private company limited by shares
+
+MANDATORY INSERTIONS:
+1. Singapore law governing clause
+2. SIAC 3-arbitrator arbitration clause
+3. Singapore incorporation — Companies Act 1967
+4. Minimum 1 Singapore-resident director (s.145)
+5. Reserved matters — shareholders (JV-SG-008)
+6. Reserved matters — board (JV-SG-009)
+7. Deadlock mechanism with Texas Shoot-Out
+   (JV-SG-010) — flag alternatives
+8. Pre-emption rights (JV-SG-017)
+9. Tag-along rights (JV-SG-019)
+10. Drag-along rights (JV-SG-018)
+11. Anti-bribery + sanctions screening (JV-SG-022)
+12. PDPA — JV Company obligations (JV-SG-023)
+13. No-announcement clause (JV-SG-028)
+
+MANDATORY REMOVALS:
+- CIETAC arbitration
+- PRC governing law
+- Chinese-language prevailing clause
+- PRC government approval requirements
+- Any provision allowing one party to unilaterally
+  amend the JV agreement
+- Undefined or vague deadlock resolution mechanisms
+
+PARAMETERIZED FIELDS — FLAG ALL WITH LAWYER_REVIEW:
+- Shareholding percentages and share capital
+- Board composition and appointment rights
+- Chairman casting vote decision
+- Reserved matter thresholds (SGD amounts)
+- CEO appointment and authority limits
+- IP mechanism (licence vs assignment)
+- Dividend policy and reserve requirements
+- Deadlock mechanism variant
+- Drag-along threshold percentage
+- Non-compete duration and scope
+- Initial term and renewal structure
+
+COMMENTARY FORMAT FOR JV:
+For each clause:
+- Concept ID: [JV-SG-XXX]
+- Strategy: [REPLACE / REWRITE / INSERT / REMOVE / PARAMETERIZED]
+- Original: [describe CN approach]
+- Change: [describe SG adaptation]
+- Reason: [statutory basis or common law]
+- CN→SG note: [bilateral difference explanation]
+- Commercial significance: [HIGH / MEDIUM / LOW]
+- Action required: [USER INPUT / LAWYER_REVIEW / NONE]
+
+=== END PART 8 ===
+
+=== PART 9: DISTRIBUTION AGREEMENT CN→SG RULES ===
+
+APPLIES TO BOTH:
+- Exclusive Distribution Agreement (doc_type: exclusive_distribution)
+- Non-Exclusive Distribution Agreement (doc_type: non_exclusive_distribution)
+
+Identify which type from the document and apply
+the correct rules throughout.
+
+CRITICAL DIFFERENCE — EXCLUSIVE vs NON-EXCLUSIVE:
+
+Exclusive Distribution:
+- Exclusivity grant clause is the cornerstone —
+  must precisely define what "exclusive" covers
+- Affiliate restriction mandatory — prevents
+  indirect circumvention
+- Minimum purchase obligations appropriate
+  (consideration for exclusivity)
+- Non-compete: 12 months post-termination
+  enforceable with exclusivity as consideration
+- Termination notice: 90-180 days
+
+Non-Exclusive Distribution:
+- Express statement that Principal retains ALL
+  rights — three sub-clauses (a)(b)(c) mandatory
+- Minimum purchase obligations NOT appropriate —
+  no exclusivity consideration to support them
+- Non-compete: customer non-solicitation only,
+  6 months maximum — full restraint very difficult
+  to enforce without exclusivity
+- Termination notice: 30-60 days
+- Resale price restriction — flag as Competition
+  Act s.34 breach — REMOVE any fixed minimum prices
+
+MANDATORY REPLACEMENTS (BOTH):
+- CIETAC → SIAC
+- PRC governing law → Singapore law
+- CNY → currency per Deal Profile
+- Party A/B / 甲方/乙方 → Principal / Distributor
+- Any fixed or minimum resale prices →
+  recommended prices only (Competition Act s.34)
+- PRC-rate late interest → SORA + 2% (SGD)
+  or SOFR + 2% (USD)
+- PRC force majeure triggers → Singapore common
+  law standard force majeure
+
+MANDATORY INSERTIONS (BOTH):
+1. Singapore law governing clause
+2. SIAC arbitration (1 or 3 arbitrators per deal size)
+3. CISG exclusion — MANDATORY for goods contracts
+4. Competition Act compliance — no resale price fixing
+5. IP licence with quality control + goodwill accrual
+6. Anti-bribery (POCA) compliance clause
+7. Independent contractor — no partnership or agency
+8. Incoterms 2020 reference for goods delivery
+9. Limitation of liability (mutual cap per deal size)
+10. Entire agreement + written variation only
+11. GST clause (9%) where applicable
+
+MANDATORY REMOVALS (BOTH):
+- CIETAC arbitration
+- PRC governing law
+- Fixed or minimum resale prices
+- Unlimited confidentiality duration
+  (replace: 3 years general / indefinite trade secrets)
+- PRC government policy as force majeure trigger
+- Unlimited right to assign without notice
+
+EXCLUSIVE ONLY — ADDITIONAL MANDATORY:
+- Exclusivity grant with affiliate restriction
+- Minimum purchase with clear consequence
+  (conversion to non-exclusive or termination)
+- Territory definition — flag SEA expansion
+
+NON-EXCLUSIVE ONLY — CRITICAL DIFFERENCES:
+- Non-exclusive appointment — three explicit
+  sub-clauses (a)(b)(c) — mandatory
+- Remove any language implying territorial protection
+- Remove mandatory marketing budget commitment
+- Soften non-compete to customer non-solicitation only
+
+PARAMETERIZED FIELDS (flag for user input):
+- Territory (Singapore / SEA-wide)
+- Currency per Deal Profile
+- Payment terms (30/60/90 days from invoice)
+- Incoterms rule (CIF / DAP / other)
+- Minimum purchase amount and period (exclusive only)
+- Non-compete duration and scope
+- Initial term and renewal notice period
+- Liability cap amount (per deal size tier)
+- Warranty period
+- Termination notice period
+- Sell-off period post-termination
+
+COMMENTARY FORMAT FOR DISTRIBUTION:
+For each clause:
+- Concept ID: [DIST-SG-XXX or NEDA-SG-XXX]
+- Document type: [EXCLUSIVE / NON-EXCLUSIVE]
+- Strategy: [REPLACE / REWRITE / INSERT / REMOVE / PARAMETERIZED]
+- Original: [CN approach]
+- Change: [SG adaptation]
+- Reason: [legal basis]
+- CN→SG note: [bilateral difference]
+- Action required: [USER INPUT / LAWYER_REVIEW / NONE]
+
+=== END PART 9 ===

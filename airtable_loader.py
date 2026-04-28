@@ -13,13 +13,23 @@ AIRTABLE_API_URL = "https://api.airtable.com/v0"
 
 # Maps doc_type identifiers to Airtable table names
 DOC_TYPE_TABLE_MAP = {
-    "employment_contract": "Employment Contract Clauses",
-    "service_agreement": "Service Agreement Clauses",
-    "nda": "NDA Clauses (Demo Tier)",
-    "non_disclosure_agreement": "NDA Clauses (Demo Tier)",
-    "pdpa": "PDPA Data Protection Clauses",
-    "document_types": "Document Types",
-    "automation_types": "Automation Types",
+    "employment_contract":        "Employment Contract Clauses",
+    "service_agreement":          "Service Agreement Clauses",
+    "nda":                        "NDA Clauses (Demo Tier)",
+    "non_disclosure_agreement":   "NDA Clauses (Demo Tier)",
+    "pdpa":                       "PDPA Data Protection Clauses",
+    "document_types":             "Document Types",
+    "automation_types":           "Automation Types",
+    # Cross-border commercial agreements (CN-SG)
+    "mou":                                   "MOU Clauses (CN-SG)",
+    "memorandum_of_understanding":           "MOU Clauses (CN-SG)",
+    "jv_agreement":                          "JV Agreement Clauses (CN-SG)",
+    "joint_venture":                         "JV Agreement Clauses (CN-SG)",
+    "jv":                                    "JV Agreement Clauses (CN-SG)",
+    "exclusive_distribution":                "Exclusive Distribution Clauses (CN-SG)",
+    "exclusive_distribution_agreement":      "Exclusive Distribution Clauses (CN-SG)",
+    "non_exclusive_distribution":            "Non-Exclusive Distribution Clauses (CN-SG)",
+    "non_exclusive_distribution_agreement":  "Non-Exclusive Distribution Clauses (CN-SG)",
 }
 
 STRATEGIES_TABLE = "Rewrite Strategies"
