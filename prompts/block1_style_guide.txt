@@ -1118,6 +1118,23 @@ PARAMETERIZED FIELDS — FLAG ALL WITH LAWYER_REVIEW:
 - Non-compete duration and scope
 - Initial term and renewal structure
 
+TERM CALIBRATION:
+If source document JV term exceeds 10 years:
+- Flag with LAWYER_REVIEW
+- Insert commentary note: "A [X]-year JV term is
+  commercially unusual for Singapore-incorporated
+  JVs. A long fixed term without robust exit
+  mechanics creates a structural trap — both
+  Parties may be unable to exit despite
+  irreconcilable differences. Market standard
+  is 5-year initial term with performance-linked
+  renewal. Recommend: (a) reduce to 5-year
+  initial term; (b) add performance criteria
+  for renewal; (c) ensure Deadlock mechanism
+  provides a clean exit regardless of term."
+- Reduce initial term to 5 years as default
+- Flag original term in redline with LAWYER_REVIEW
+
 COMMENTARY FORMAT FOR JV:
 For each clause:
 - Concept ID: [JV-SG-XXX]
