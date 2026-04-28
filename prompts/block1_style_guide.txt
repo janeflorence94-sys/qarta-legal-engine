@@ -1118,6 +1118,43 @@ PARAMETERIZED FIELDS — FLAG ALL WITH LAWYER_REVIEW:
 - Non-compete duration and scope
 - Initial term and renewal structure
 
+FURTHER FUNDING / DEFAULT MECHANISM:
+When drafting or rewriting clauses that deal with
+additional capital contributions, shareholder loans,
+or default consequences for a Party that fails to
+contribute:
+- Default mechanism options: (a) dilution of
+  defaulting Party's shareholding; (b) shareholder
+  loan from non-defaulting Party; (c) third-party
+  funding with pre-emption rights preserved.
+- Shareholder loan is the most commonly used
+  mechanism for CN-SG JVs — insert as default
+  where source document is silent or uses vague
+  "further funding" language.
+- Always flag funding mechanism with LAWYER_REVIEW
+  and apply the THIN CAPITALISATION FLAG below.
+
+THIN CAPITALISATION FLAG:
+When inserting shareholder loan as a default
+contribution mechanism, always add this
+commentary note:
+
+"IRAS THIN CAPITALISATION RISK: If the JV
+Company's debt-to-equity ratio is high (i.e.
+shareholder loans significantly exceed paid-up
+capital), IRAS may recharacterise interest
+payments on shareholder loans as dividends
+under the arm's length principle, disallowing
+the interest deduction. For a SGD [X] capitalised
+JV receiving shareholder loans of a similar or
+greater amount, a transfer pricing analysis of
+the loan terms is required. Recommend: (a)
+confirm loan quantum vs equity ratio with
+Singapore tax adviser; (b) ensure shareholder
+loan interest rate meets IRAS arm's length
+standard; (c) document loan terms in a
+separate Shareholder Loan Agreement."
+
 TERM CALIBRATION:
 If source document JV term exceeds 10 years:
 - Flag with LAWYER_REVIEW
