@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from pathlib import Path
 
 from docx import Document
@@ -6,6 +7,14 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
+
+# ── Corridor → document header text ───────────────────────────────────────────
+CORRIDOR_HEADERS = {
+    "CN_SG": "QARTA LEGAL — ADAPTED FOR SINGAPORE LAW",
+    "SG_ID": "QARTA LEGAL — ADAPTED FOR INDONESIAN LAW",
+    "CN_ID": "QARTA LEGAL — ADAPTED FOR INDONESIAN LAW",
+    "CN_MY": "QARTA LEGAL — ADAPTED FOR MALAYSIAN LAW",
+}
 
 # ── Colour palette ─────────────────────────────────────────────────────────────
 RED      = RGBColor(192, 0, 0)        # placeholders / deleted text
@@ -146,8 +155,9 @@ def _para_with_placeholders(doc, line: str):
     return para
 
 
-def _build_clean(text: str, company_name: str, doc_type: str) -> Document:
-    doc = _new_doc("QARTA LEGAL — ADAPTED FOR SINGAPORE LAW")
+def _build_clean(text: str, company_name: str, doc_type: str, corridor: str = "CN_SG") -> Document:
+    header = CORRIDOR_HEADERS.get(corridor.upper(), "QARTA LEGAL — ADAPTED DOCUMENT")
+    doc = _new_doc(header)
 
     in_lawyer_block = False
     in_checklist    = False
@@ -427,14 +437,23 @@ def build_outputs(
     doc_type: str,
     output_dir: str,
     job_id: str = None,
+    corridor: str = "CN_SG",
 ) -> dict:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     prefix = f"{job_id}_" if job_id else ""
 
+    # Inject dynamic date — replaces any "Date of adaptation: <anything>" Claude produced
+    date_str = datetime.utcnow().strftime("%d %B %Y")
+    commentary_text = re.sub(
+        r'(?i)Date of adaptation:[^\n]*',
+        f'Date of adaptation: {date_str}',
+        commentary_text,
+    )
+
     paths = {}
 
-    clean_doc = _build_clean(clean_text, company_name, doc_type)
+    clean_doc = _build_clean(clean_text, company_name, doc_type, corridor=corridor)
     paths['clean'] = str(out / f"{prefix}clean.docx")
     clean_doc.save(paths['clean'])
 

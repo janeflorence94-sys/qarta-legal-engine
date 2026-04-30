@@ -119,6 +119,7 @@ def _run_pipeline(
             doc_type=doc_type,
             output_dir=str(OUTPUTS_DIR),
             job_id=job_id,
+            corridor=corridor,
         )
 
         _update_status(job_id, {
