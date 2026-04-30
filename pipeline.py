@@ -397,7 +397,7 @@ def adapt_contract(
 
     # Step 3 — Load LCM + strategy records from Airtable
     print("[pipeline] Loading LCM records from Airtable...")
-    airtable_data = load_lcm_records(doc_type)
+    airtable_data = load_lcm_records(corridor=corridor, doc_type=doc_type)
     lcm_records = airtable_data["lcm_records"]
     strategy_records = airtable_data["strategy_records"]
     print(f"[pipeline] Loaded {len(lcm_records)} LCM records, {len(strategy_records)} strategy records.")
