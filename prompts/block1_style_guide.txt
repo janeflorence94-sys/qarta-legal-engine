@@ -1291,3 +1291,120 @@ For each clause:
 - Action required: [USER INPUT / LAWYER_REVIEW / NONE]
 
 === END PART 9 ===
+
+=== PART 10: SG→ID CORRIDOR ADAPTATION RULES ===
+
+APPLIES TO ALL DOCUMENTS IN THE SG→ID CORRIDOR.
+
+CORRIDOR IDENTITY:
+Origin: Singapore (English-law documents)
+Target: Indonesia (Indonesian law jurisdiction)
+Language direction: English → Bilingual (English + Bahasa Indonesia)
+This corridor adapts Singapore-law documents for
+use in Indonesia. The source documents are already
+in English — the adaptation task is legal
+restructuring for Indonesian law, NOT language
+translation.
+
+FOUR MANDATORY RULES FOR EVERY SG→ID DOCUMENT:
+
+RULE 1 — ARTICLE 1266 KUHPerdata WAIVER (CRITICAL):
+Every SG→ID document with termination rights MUST
+include an express waiver of the court approval
+requirement under Indonesian Civil Code Art. 1266.
+Without this waiver, unilateral termination is
+legally invalid in Indonesia.
+Insert in every termination clause:
+"The Parties expressly waive the requirement for
+court approval of termination under Article 1266
+of the Indonesian Civil Code (KUHPerdata), to the
+extent permitted by applicable Indonesian law."
+
+RULE 2 — LANGUAGE REQUIREMENT (UU BAHASA):
+Every SG→ID document MUST flag the dual-language
+requirement under Law No. 24/2009 (UU Bahasa).
+Insert in every SG→ID document:
+"This Agreement is executed in both the English
+language and Bahasa Indonesia. In the event of
+any conflict, the English version shall prevail."
+Flag with LAWYER_REVIEW — professional Bahasa
+Indonesia translation required before execution.
+Cite the Nine AM Ltd v PT Bangun Karya Pratama
+Lestari [2013] precedent in commentary.
+
+RULE 3 — BEA MATERAI STAMP DUTY:
+Every SG→ID document MUST include a Bea Materai
+notice under Law No. 10/2020.
+IDR 10,000 stamp duty per original copy executed
+in Indonesia. Electronic Bea Materai available
+via Peruri. Does not affect validity but affects
+Indonesian court admissibility.
+
+RULE 4 — UU PDP PERSONAL DATA:
+If any SG→ID document involves personal data,
+apply Law No. 27/2022 (UU PDP) full mandatory
+baseline. UU PDP fully in force as of October 2024.
+Cross-border personal data transfers from
+Indonesia to Singapore require contractual
+safeguards under UU PDP Chapter VII.
+
+INDONESIAN LAW REPLACEMENTS:
+- Singapore law → Indonesian law (Hukum Indonesia)
+- SIAC → SIAC (retain — preferred for SG parties;
+  enforceable in Indonesia as NY Convention award)
+- Singapore courts → SIAC arbitration
+  (not Indonesian courts — enforcement is slow)
+- SGD interest rate SORA → BI Rate + 2% (IDR)
+  or SOFR + 2% (USD)
+- Singapore GST 9% → Indonesian PPN 11%
+  (where applicable)
+- Companies Act (Cap.50) → Law No. 40/2007
+  on Limited Liability Companies
+- No equivalent of Singapore EA —
+  apply UU Ketenagakerjaan (Law No. 13/2003
+  as amended by Omnibus Law No. 11/2020)
+
+INDONESIAN LAW INSERTIONS:
+1. Art. 1266 KUHPerdata waiver (termination)
+2. Dual-language clause (UU Bahasa)
+3. Bea Materai notice
+4. UU PDP compliance (if personal data)
+5. NPWP/NIB identification for Indonesian party
+6. Force majeure includes government regulation
+   changes (kebijakan pemerintah)
+7. Trade secrets identified as rahasia dagang
+   under Law No. 30/2000
+
+PT PMA FLAG (for any document involving
+Indonesian business operations):
+Foreign companies cannot directly operate in
+Indonesia — PT PMA (Perseroan Terbatas
+Penanaman Modal Asing) vehicle required.
+Minimum capital: IDR 10 billion (~USD 650,000).
+OSS licensing timeline: 2-4 months.
+Always flag in commentary for MOU and
+Service Agreement documents.
+
+TAX FLAGS (always insert in commentary):
+- PPh 23 withholding tax at 2% on service fees
+  paid to Indonesian corporate entities
+- PPN (VAT) at 11% on taxable services
+  performed in Indonesia
+- Singapore-Indonesia DTA may reduce
+  withholding rates — flag for tax adviser
+- Bea Materai IDR 10,000 per original copy
+
+COMMENTARY FORMAT FOR SG→ID:
+For each clause state:
+- SG Approach: [how Singapore-law documents
+  typically handle this]
+- ID Requirement: [what Indonesian law requires]
+- Change: [what was adapted and why]
+- Indonesian Law Basis: [statutory reference
+  with Indonesian law name and number]
+- SG→ID note: [why this differs between
+  SG and ID jurisdictions]
+- Action required: [USER INPUT / LAWYER_REVIEW
+  / BKPM_REVIEW / TAX_REVIEW / NONE]
+
+=== END PART 10 ===
