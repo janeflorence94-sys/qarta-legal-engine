@@ -464,7 +464,7 @@ Please adapt this contract and produce exactly three outputs separated by these 
         try:
             with client.messages.stream(
                 model="claude-sonnet-4-6",
-                max_tokens=16000,
+                max_tokens=32000,
                 system=system_block,
                 messages=messages,
             ) as stream:
@@ -481,15 +481,29 @@ Please adapt this contract and produce exactly three outputs separated by these 
         return "".join(result_parts)
 
     def _continuation(partial: str) -> str:
-        """Ask Claude to continue from where it left off."""
+        """Ask Claude to continue from where it left off.
+        Uses a targeted prompt when only OUTPUT 3 (COMMENTARY) is missing."""
         present = [h for h in OUTPUT_HEADERS if h in partial]
         missing = [h for h in OUTPUT_HEADERS if h not in partial]
         print(f"[pipeline] Continuation: have {present}, need {missing}")
-        prompt = (
-            f"Your previous response was cut off. You generated {present} but stopped "
-            f"before {missing}. Please continue exactly from where you left off and "
-            f"generate the remaining sections, starting with the next missing header."
-        )
+
+        if missing == [OUTPUT_HEADERS[2]]:
+            # Only COMMENTARY missing — targeted request so Claude doesn't re-draft CLEAN/REDLINE
+            prompt = (
+                "You completed OUTPUT 1 (CLEAN) and OUTPUT 2 (REDLINE) but did not produce "
+                "OUTPUT 3 (COMMENTARY). Please produce the full commentary section now, "
+                "starting with this exact header on its own line:\n\n"
+                "=== OUTPUT 3: COMMENTARY ===\n\n"
+                "Provide the complete four-field commentary for every adapted clause. "
+                "Do not repeat OUTPUT 1 or OUTPUT 2."
+            )
+        else:
+            prompt = (
+                f"Your previous response was cut off. You produced {present} but stopped "
+                f"before completing {missing}. Please continue exactly from where you left off "
+                f"and generate the remaining sections, starting with the next missing header."
+            )
+
         result = _call_claude_streaming([
             {"role": "user",      "content": user_message},
             {"role": "assistant", "content": partial},
@@ -514,14 +528,20 @@ Please adapt this contract and produce exactly three outputs separated by these 
             missing = [h for h in OUTPUT_HEADERS if h not in response_text]
 
         if missing:
-            # Partial output — continue from what we have
-            print(f"[pipeline] Missing sections {missing}. Running continuation...")
+            # Partial output — targeted continuation (commentary-aware or generic)
+            print(f"[pipeline] Missing sections {missing}. Running continuation 1...")
             response_text = _continuation(response_text)
 
-        # Final check — second continuation if still incomplete
+        # Check again — second continuation if still incomplete
         still_missing = [h for h in OUTPUT_HEADERS if h not in response_text]
         if still_missing:
-            print(f"[pipeline] Still missing {still_missing}. Running second continuation...")
+            print(f"[pipeline] Still missing {still_missing}. Running continuation 2...")
+            response_text = _continuation(response_text)
+
+        # Final check — third pass if commentary specifically still absent
+        still_missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+        if still_missing == [OUTPUT_HEADERS[2]]:
+            print("[pipeline] Commentary still absent. Running targeted commentary continuation...")
             response_text = _continuation(response_text)
 
     print("[pipeline] All sections present, parsing...")
