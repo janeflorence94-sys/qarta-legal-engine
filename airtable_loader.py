@@ -35,6 +35,11 @@ CORRIDOR_TABLE_MAP = {
     ("SG_ID", "mou"):                               "MOU Clauses (SG-ID)",
     ("SG_ID", "memorandum_of_understanding"):       "MOU Clauses (SG-ID)",
     ("SG_ID", "service_agreement"):                 "Service Agreement Clauses (SG-ID)",
+    ("SG_ID", "jv_agreement"):                      "JV Agreement Clauses (SG-ID)",
+    ("SG_ID", "joint_venture"):                     "JV Agreement Clauses (SG-ID)",
+    ("SG_ID", "jv"):                                "JV Agreement Clauses (SG-ID)",
+    ("SG_ID", "non_exclusive_distribution"):        "Non-Exclusive Distribution Clauses (SG-ID)",
+    ("SG_ID", "non_exclusive_distribution_agreement"): "Non-Exclusive Distribution Clauses (SG-ID)",
 }
 
 STRATEGIES_TABLE = "Rewrite Strategies"
