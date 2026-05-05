@@ -112,17 +112,20 @@ def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
     corr = corridor.upper()
     if corr == "CN_SG":
         b1_content = b1_raw   # Full block1 — current behaviour for CN-SG
+        print(f"[pipeline] block1: full (CN_SG, {len(b1_raw):,} chars)")
     else:
         selected = []
+        loaded_parts = []
 
         # Part 6 — deal profile / clause modulation rules (universal)
         part6 = _extract_part(b1_raw, 6)
         if part6:
             selected.append(part6)
+            loaded_parts.append("Part6")
         else:
-            # Parse failed — fall back to full block1 to avoid empty prompt
             print(f"[pipeline] WARNING: could not extract Part 6 from block1 — using full block1")
             selected.append(b1_raw)
+            loaded_parts.append("block1-FULL(fallback)")
 
         # Corridor-level rules (e.g. Part 10 for SG_ID)
         corr_part_num = CORRIDOR_PART_MAP.get(corr)
@@ -130,6 +133,7 @@ def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
             cp = _extract_part(b1_raw, corr_part_num)
             if cp:
                 selected.append(cp)
+                loaded_parts.append(f"Part{corr_part_num}")
             else:
                 print(f"[pipeline] WARNING: Part {corr_part_num} not found for corridor {corr}")
 
@@ -139,10 +143,15 @@ def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
             dp = _extract_part(b1_raw, doc_part_num)
             if dp:
                 selected.append(dp)
+                loaded_parts.append(f"Part{doc_part_num}")
             else:
                 print(f"[pipeline] WARNING: Part {doc_part_num} not found for doc_type {doc_type}")
 
         b1_content = "\n\n".join(selected)
+        print(
+            f"[pipeline] block1: slim ({corr}) — loaded {loaded_parts} "
+            f"({len(b1_content):,} chars, was {len(b1_raw):,} full)"
+        )
 
     blocks = ["=== BLOCK1 STYLE GUIDE ===\n\n" + b1_content]
 
@@ -548,7 +557,7 @@ Please adapt this contract and produce exactly three outputs separated by these 
                     result_parts.append(text)
         except Exception as e:
             # Connection dropped mid-stream — return whatever arrived
-            print(f"\n[pipeline] Stream interrupted: {e}")
+            print(f"\n[pipeline] Stream interrupted: {type(e).__name__}: {e}")
         finally:
             stop_event.set()
             dot_thread.join(timeout=1)
@@ -605,9 +614,14 @@ Please adapt this contract and produce exactly three outputs separated by these 
             f"corridor={corridor}, doc_type={doc_type}."
         )
 
+    print(
+        f"[pipeline] Job config: corridor={corridor}, doc_type={doc_type}, "
+        f"lcm_records={len(lcm_records)}, strategy_records={len(strategy_records)}"
+    )
     print("[pipeline] Calling Claude API... (this may take 2-3 minutes for full output)")
     response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
-    print(f"[pipeline] Received {len(response_text)} chars.")
+    print(f"[pipeline] Received {len(response_text):,} chars.")
+    print(f"[pipeline] Response preview: {response_text[:200]!r}")
 
     missing = [h for h in OUTPUT_HEADERS if h not in response_text]
 
@@ -618,6 +632,8 @@ Please adapt this contract and produce exactly three outputs separated by these 
             # Connection dropped before any output — retry the full call once
             print("[pipeline] No output received. Retrying full call...")
             response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
+            print(f"[pipeline] Retry received {len(response_text):,} chars.")
+            print(f"[pipeline] Retry preview: {response_text[:200]!r}")
             missing = [h for h in OUTPUT_HEADERS if h not in response_text]
 
         if missing:
