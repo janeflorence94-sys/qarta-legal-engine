@@ -13,17 +13,33 @@ from PyPDF2 import PdfReader
 from airtable_loader import load_lcm_records
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-PROMPT_FILES = [
-    "block1_style_guide.txt",
-    "block2_pdpa_enforcement.txt",
-    "block3_certainty_hierarchy.txt",
-]
 
 OUTPUT_HEADERS = [
     "=== OUTPUT 1: CLEAN ===",
     "=== OUTPUT 2: REDLINE ===",
     "=== OUTPUT 3: COMMENTARY ===",
 ]
+
+# block1 part number that contains doc-type-specific drafting rules
+DOC_TYPE_PART_MAP = {
+    "mou":                                   7,
+    "memorandum_of_understanding":           7,
+    "jv_agreement":                          8,
+    "joint_venture":                         8,
+    "jv":                                    8,
+    "exclusive_distribution":                9,
+    "exclusive_distribution_agreement":      9,
+    "non_exclusive_distribution":            9,
+    "non_exclusive_distribution_agreement":  9,
+}
+
+# block1 part number that contains corridor-level adaptation rules
+CORRIDOR_PART_MAP = {
+    "SG_ID": 10,
+    "CN_ID": 10,
+}
+
+PROMPT_SIZE_WARN = 180_000   # chars — log a warning above this threshold
 
 
 def _extract_text_docx(file_bytes: bytes) -> str:
@@ -68,16 +84,76 @@ def _strip_markdown_tables(text: str) -> str:
     return "\n".join(lines)
 
 
-def _load_system_prompt() -> str:
-    blocks = []
-    for filename in PROMPT_FILES:
+def _extract_part(text: str, part_num: int) -> str:
+    """Extract a numbered part section from block1 text using its === markers."""
+    match = re.search(
+        rf'=== PART {part_num}:.*?=== END PART {part_num} ===',
+        text,
+        re.DOTALL,
+    )
+    return match.group(0).strip() if match else ""
+
+
+def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
+    """Load system prompt, selecting block1 parts based on corridor and doc_type.
+
+    CN_SG  → full block1 (Parts 1-6 + any doc-type parts present).
+    Other  → Part 6 (deal profile modulation)
+             + corridor-specific part (e.g. Part 10 for SG_ID)
+             + doc-type-specific part (Part 7/8/9 where applicable).
+
+    block2 (PDPA) and block3 (certainty hierarchy) are always included in full.
+    """
+    b1_path = PROMPTS_DIR / "block1_style_guide.txt"
+    if not b1_path.exists():
+        raise ValueError(f"Prompt file not found: {b1_path}")
+    b1_raw = _strip_markdown_tables(b1_path.read_text(encoding="utf-8"))
+
+    corr = corridor.upper()
+    if corr == "CN_SG":
+        b1_content = b1_raw   # Full block1 — current behaviour for CN-SG
+    else:
+        selected = []
+
+        # Part 6 — deal profile / clause modulation rules (universal)
+        part6 = _extract_part(b1_raw, 6)
+        if part6:
+            selected.append(part6)
+        else:
+            # Parse failed — fall back to full block1 to avoid empty prompt
+            print(f"[pipeline] WARNING: could not extract Part 6 from block1 — using full block1")
+            selected.append(b1_raw)
+
+        # Corridor-level rules (e.g. Part 10 for SG_ID)
+        corr_part_num = CORRIDOR_PART_MAP.get(corr)
+        if corr_part_num:
+            cp = _extract_part(b1_raw, corr_part_num)
+            if cp:
+                selected.append(cp)
+            else:
+                print(f"[pipeline] WARNING: Part {corr_part_num} not found for corridor {corr}")
+
+        # Doc-type-specific rules (Part 7 MOU / Part 8 JV / Part 9 Distribution)
+        doc_part_num = DOC_TYPE_PART_MAP.get(doc_type.lower())
+        if doc_part_num:
+            dp = _extract_part(b1_raw, doc_part_num)
+            if dp:
+                selected.append(dp)
+            else:
+                print(f"[pipeline] WARNING: Part {doc_part_num} not found for doc_type {doc_type}")
+
+        b1_content = "\n\n".join(selected)
+
+    blocks = ["=== BLOCK1 STYLE GUIDE ===\n\n" + b1_content]
+
+    for filename in ("block2_pdpa_enforcement.txt", "block3_certainty_hierarchy.txt"):
         path = PROMPTS_DIR / filename
         if not path.exists():
             raise ValueError(f"Prompt file not found: {path}")
-        raw = path.read_text(encoding="utf-8")
-        cleaned = _strip_markdown_tables(raw)
+        raw = _strip_markdown_tables(path.read_text(encoding="utf-8"))
         section_name = filename.replace(".txt", "").replace("_", " ").upper()
-        blocks.append(f"=== {section_name} ===\n\n{cleaned}")
+        blocks.append(f"=== {section_name} ===\n\n{raw}")
+
     return "\n\n".join(blocks)
 
 
@@ -386,10 +462,10 @@ def adapt_contract(
         raise ValueError(f"Unsupported file format '.{ext}'. Only .docx and .pdf are accepted.")
     print(f"[pipeline] Extracted {len(contract_text)} chars from .{ext} file.")
 
-    # Step 2 — Load system prompt blocks + deal profile
+    # Step 2 — Load system prompt blocks + deal profile (corridor-aware)
     print("[pipeline] Loading prompts...")
-    system_prompt = _load_system_prompt()
-    print(f"[pipeline] Prompts loaded ({len(system_prompt)} chars).")
+    system_prompt = _load_system_prompt(corridor=corridor, doc_type=doc_type)
+    print(f"[pipeline] Prompts loaded ({len(system_prompt):,} chars).")
 
     deal_profile_block = build_deal_profile_block(deal_profile or {})
     if deal_profile_block:
@@ -511,7 +587,24 @@ Please adapt this contract and produce exactly three outputs separated by these 
         ])
         return partial + "\n\n" + result
 
-    # Step 6 — First call; retry/continue on drop or truncation
+    # Step 6 — Log total prompt size then call Claude
+    total_chars = (
+        len(system_prompt)
+        + len(deal_profile_block)
+        + len(user_message)
+    )
+    print(
+        f"[pipeline] Prompt size: {total_chars:,} chars total "
+        f"(system={len(system_prompt):,}, deal_profile={len(deal_profile_block):,}, "
+        f"user={len(user_message):,})"
+    )
+    if total_chars > PROMPT_SIZE_WARN:
+        print(
+            f"[pipeline] WARNING: prompt exceeds {PROMPT_SIZE_WARN:,} char threshold "
+            f"({total_chars:,} chars). Corridor-aware loading applied: "
+            f"corridor={corridor}, doc_type={doc_type}."
+        )
+
     print("[pipeline] Calling Claude API... (this may take 2-3 minutes for full output)")
     response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
     print(f"[pipeline] Received {len(response_text)} chars.")
