@@ -40,6 +40,24 @@ CORRIDOR_TABLE_MAP = {
     ("SG_ID", "jv"):                                "JV Agreement Clauses (SG-ID)",
     ("SG_ID", "non_exclusive_distribution"):        "Non-Exclusive Distribution Clauses (SG-ID)",
     ("SG_ID", "non_exclusive_distribution_agreement"): "Non-Exclusive Distribution Clauses (SG-ID)",
+
+    # ── SG-MY corridor ────────────────────────────────────────────────────────
+    ("SG_MY", "mou"):                               "MOU Clauses (SG-MY)",
+    ("SG_MY", "memorandum_of_understanding"):       "MOU Clauses (SG-MY)",
+    ("SG_MY", "service_agreement"):                 "Service Agreement Clauses (SG-MY)",
+    ("SG_MY", "employment"):                        "Employment Clauses (SG-MY)",
+    ("SG_MY", "employment_contract"):               "Employment Clauses (SG-MY)",
+    ("SG_MY", "jv"):                                "JV Agreement Clauses (SG-MY)",
+    ("SG_MY", "jv_agreement"):                      "JV Agreement Clauses (SG-MY)",
+    ("SG_MY", "joint_venture"):                     "JV Agreement Clauses (SG-MY)",
+    ("SG_MY", "sha"):                               "Shareholders Agreement Clauses (SG-MY)",
+    ("SG_MY", "shareholders_agreement"):            "Shareholders Agreement Clauses (SG-MY)",
+    ("SG_MY", "exclusive_distribution"):            "Exclusive Distribution Clauses (SG-MY)",
+    ("SG_MY", "exclusive_distribution_agreement"):  "Exclusive Distribution Clauses (SG-MY)",
+    ("SG_MY", "ip_licence"):                        "IP Licence Clauses (SG-MY)",
+    ("SG_MY", "ip_license"):                        "IP Licence Clauses (SG-MY)",
+    ("SG_MY", "franchise"):                         "Franchise Agreement Clauses (SG-MY)",
+    ("SG_MY", "franchise_agreement"):               "Franchise Agreement Clauses (SG-MY)",
 }
 
 STRATEGIES_TABLE = "Rewrite Strategies"

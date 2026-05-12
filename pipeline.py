@@ -37,6 +37,7 @@ DOC_TYPE_PART_MAP = {
 CORRIDOR_PART_MAP = {
     "SG_ID": 10,
     "CN_ID": 10,
+    "SG_MY": 11,
 }
 
 PROMPT_SIZE_WARN = 180_000   # chars — log a warning above this threshold
