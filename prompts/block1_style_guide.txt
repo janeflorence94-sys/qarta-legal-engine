@@ -1414,10 +1414,9 @@ For each clause state:
 CORRIDOR: SG_MY
 ORIGIN: Singapore | DESTINATION: Malaysia
 LEGAL BASIS: Common law (Contracts Act 1950). Most structurally similar corridor to SG base documents. Statutory overlays create significant divergences that must be addressed in every document.
-ARBITRATION DEFAULT: AIAC (Asian International Arbitration Centre), Kuala Lumpur
-CURRENCY DEFAULT: MYR. Flag all USD/SGD clauses and insert MYR equivalent.
+ARBITRATION DEFAULT: AIAC (Asian International Arbitration Centre), Kuala Lumpur — AIAC Arbitration Rules 2023
+CURRENCY DEFAULT: MYR. Flag all USD/SGD clauses and insert MYR equivalent. Cite FX Administration Rules 2021 (Bank Negara Malaysia).
 LANGUAGE: English. Bahasa Malaysia required where statutorily mandated.
-
 DOCUMENTS COVERED: MOU, Service Agreement, Employment, JV, SHA, Exclusive Distribution, IP Licence, Franchise Agreement
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -1426,135 +1425,368 @@ UNIVERSAL MANDATORY RULES — ALL 8 DOCUMENT TYPES
 
 GOVERNING LAW (FULL_AUTO):
 Replace any Singapore governing law clause with:
-"This Agreement shall be governed by and construed in accordance with the laws of Malaysia. The parties submit to the exclusive jurisdiction of the courts of Malaysia, subject to any arbitration agreement contained herein."
-Statutory basis: Contracts Act 1950 (Act 136).
+"This Agreement shall be governed by and construed in accordance with the laws of Malaysia, including the Contracts Act 1950 (Act 136). The parties submit to the non-exclusive jurisdiction of the courts of Malaysia, subject to any arbitration agreement contained herein."
+Statutory basis: Contracts Act 1950 (Act 136). Unlike PRC→SG corridor, SG→MY involves two common law systems — good faith is not a general implied term in either jurisdiction. No behavioural obligations beyond express terms are implied. This is a direct clause replacement — do not retain Singapore governing law under any circumstances unless MY-Q1 (Labuan) is triggered.
 
-NON-COMPETE / RESTRAINT OF TRADE (PARAMETERIZED — flag all):
-CRITICAL: Section 28 Contracts Act 1950 renders restraint of trade agreements VOID in Malaysia. No reasonableness test applies. Flag every non-compete, non-solicitation, and restraint of trade clause with LAWYER_REVIEW. Insert commentary: "WARNING: Non-compete clauses are void under s.28 Contracts Act 1950. Requires legal review before execution. Consider restructuring as confidentiality obligation or garden leave."
-Exception: Franchise post-term non-competes are more defensible but remain LAWYER_REVIEW.
+NON-COMPETE / RESTRAINT OF TRADE (PARAMETERIZED — flag all, insert replacement):
+CRITICAL: Section 28 Contracts Act 1950 (Act 136) renders every agreement in restraint of trade VOID in Malaysia. There is NO reasonableness test — unlike Singapore's Lek Gwee Noi v Humming Flowers analysis. Malaysian courts (Tan Ying Hong v Tan Sian San & Ors [2010]) hold s.28 voids restraints regardless of scope or duration.
+
+DO NOT retain any non-compete, non-solicitation, or restraint of trade clause from the source document.
+
+MANDATORY REPLACEMENT: Instead of a non-compete, insert the following Competitive Protection clause as a FULL_AUTO replacement:
+
+"COMPETITIVE PROTECTION
+(a) Confidentiality as Protection: Each Party shall not use any Confidential Information (as defined herein) of the other Party to solicit, approach, or engage the other Party's clients, customers, or key personnel during the term of this Agreement and for a period of [24/12/6] months following termination or expiry.
+(b) Personnel Non-Solicitation: Neither Party shall, during the term of this Agreement and for [12] months following termination, directly solicit or recruit any employee or contractor of the other Party who was involved in the performance of this Agreement, without the prior written consent of the other Party.
+(c) No Trade Restraint: The Parties acknowledge that nothing in this Agreement shall be construed as restricting either Party's right to carry on any trade or business, consistent with s.28 Contracts Act 1950 (Act 136)."
+
+Insert this replacement in every document where a non-compete clause appears in the source. Insert LAWYER_REVIEW flag above it:
+"⚠ LAWYER REVIEW REQUIRED: Non-compete clauses are void under s.28 Contracts Act 1950. The non-compete from the source document has been removed and replaced with a confidentiality-based competitive protection clause. Malaysian legal counsel must review before execution. Non-solicitation of personnel may also carry s.28 risk in some Malaysian court decisions — verify with counsel."
+
+Exception: Franchise post-term non-competes — insert same replacement but note that franchise context may offer slightly more defensibility given substantial consideration. Still LAWYER_REVIEW.
 
 MACC ACT 2009 s.17A CORPORATE LIABILITY (FULL_AUTO):
-Insert in Representations & Warranties:
-"Each Party represents and warrants that it has in place adequate procedures (as defined under the Guidelines on Adequate Procedures issued pursuant to s.17A(5) MACC Act 2009) to prevent persons associated with it from undertaking conduct that would constitute a corruption offence under the MACC Act 2009. Each Party shall promptly notify the other upon becoming aware of any actual or suspected breach of this warranty."
-Insert in Termination: right to terminate immediately on MACC Act investigation, charge, or conviction.
-NOTE: MACC s.17A enforcement is more active than Singapore POCA. Penalties: fine of not less than 10x gratification value or RM1 million (whichever higher) plus up to 20 years imprisonment.
+Insert as a standalone binding clause in every document — not embedded in boilerplate:
 
-PDPA 2010 MALAYSIA (FULL_AUTO):
-Insert alongside (do not replace) any Singapore PDPA clause:
-"Each Party shall comply with the Personal Data Protection Act 2010 (Act 709) in respect of any personal data processed under or in connection with this Agreement. Neither Party shall transfer personal data outside Malaysia except to countries approved by the Minister under s.129 PDPA or with the prior written consent of the data subject."
+"ANTI-CORRUPTION AND MACC COMPLIANCE
+(a) Adequate Procedures: Each Party represents and warrants that it has in place adequate procedures (as defined under the Guidelines on Adequate Procedures issued pursuant to s.17A(5) Malaysian Anti-Corruption Commission Act 2009 ("MACC Act")) to prevent persons associated with it from undertaking conduct that would constitute a corruption offence under the MACC Act 2009.
+(b) No Gratification: Neither Party shall, directly or indirectly, offer, give, receive, or solicit any gratification to or from any person for the purpose of obtaining any improper advantage in connection with this Agreement.
+(c) Notification: Each Party shall promptly notify the other Party upon becoming aware of any actual or suspected breach of this clause.
+(d) Termination: Either Party may terminate this Agreement immediately upon written notice if the other Party or any person associated with it is investigated for, charged with, or convicted of any offence under the MACC Act 2009 or equivalent anti-corruption legislation."
 
-DISPUTE RESOLUTION — AIAC (PARAMETERIZED):
-Default: Replace SIAC with AIAC. Seat: Kuala Lumpur. Language: English.
-"Any dispute shall be referred to and finally resolved by arbitration administered by the Asian International Arbitration Centre (AIAC) in accordance with the Arbitration Rules of the AIAC. The seat of arbitration shall be Kuala Lumpur, Malaysia."
-Override: If deal profile flags Labuan IBFC or SG HoldCo structure → use SIAC Singapore instead.
+NOTE FOR COMMENTARY: MACC s.17A enforcement is materially more active than Singapore's Prevention of Corruption Act (Cap. 241). Penalties: fine of not less than 10x the value of the gratification or RM1,000,000 (whichever higher) plus up to 20 years' imprisonment for individuals. Corporate liability is strict — organisation liable unless it proves it had adequate procedures. Singapore's POCA does not impose equivalent associated-persons corporate liability. Malaysian counterparties expect this clause — its absence is a red flag.
+
+PDPA 2010 MALAYSIA (FULL_AUTO — dual layer):
+Insert alongside (do not replace) any Singapore PDPA clause. Cite Act 709 throughout:
+
+"PERSONAL DATA PROTECTION
+(a) Malaysian PDPA: Each Party shall comply with the Personal Data Protection Act 2010 (Act 709) ("MY PDPA") and all subsidiary legislation and standards issued thereunder in respect of any personal data processed under or in connection with this Agreement. Each Party shall comply with all seven data protection principles under the MY PDPA: General Principle (s.6), Notice and Choice Principle (s.7), Disclosure Principle (s.8), Security Principle (s.9), Retention Principle (s.11), Data Integrity Principle (s.10), and Access Principle (s.12).
+(b) Cross-Border Transfer: Neither Party shall transfer personal data outside Malaysia except: (i) to countries on the whitelist prescribed by the Minister under s.129 MY PDPA (note: Singapore IS on this whitelist — SG↔MY transfers are permitted with appropriate safeguards); or (ii) with the data subject's prior written consent; or (iii) where the transfer is necessary for the performance of a contract with the data subject.
+(c) Data Breach: Each Party shall notify the other Party within 24 hours of becoming aware of any personal data breach. Each Party shall notify the Personal Data Protection Commissioner and take remedial action as required under the MY PDPA. NOTE: The Personal Data Protection (Amendment) Bill 2024 is expected to introduce a mandatory 72-hour breach notification obligation to the Commissioner when enacted — monitor pdp.gov.my for updates and update this clause upon enactment.
+(d) Singapore PDPA: To the extent that the Singapore party processes personal data of Malaysian data subjects in Singapore, it shall additionally comply with the Personal Data Protection Act 2012 (Singapore), including mandatory data breach notification to the PDPC within 3 calendar days (SG PDPA s.26D).
+(e) Sensitive Data: If processing involves health data, criminal records, political opinions, or religious beliefs of Malaysian individuals, MY PDPA s.40 enhanced consent requirements apply — flag for LAWYER_REVIEW and insert enhanced consent provisions."
+
+DISPUTE RESOLUTION — AIAC (FULL_AUTO default):
+Replace SIAC clauses with AIAC. Cite AIAC Arbitration Rules 2023 and Arbitration Act 2005 (Act 646):
+
+"DISPUTE RESOLUTION
+Any dispute, controversy, or claim arising out of or in connection with this Agreement, including any question regarding its existence, validity, or termination, shall be referred to and finally resolved by arbitration administered by the Asian International Arbitration Centre ("AIAC") in accordance with the AIAC Arbitration Rules 2023 for the time being in force, which rules are deemed incorporated by reference into this clause. The following shall apply:
+(a) Seat of arbitration: Kuala Lumpur, Malaysia;
+(b) Number of arbitrators: [one (1) / three (3)] — apply deal profile rules: under SGD 1M = 1 arbitrator; SGD 1M and above = 3 arbitrators;
+(c) Language: English;
+(d) Governing law of this arbitration agreement: Malaysian law (Arbitration Act 2005, Act 646).
+Awards shall be final and binding and enforceable under the Convention on the Recognition and Enforcement of Foreign Arbitral Awards 1958 (New York Convention), to which Malaysia acceded in 1985.
+Notwithstanding the above, either Party may apply to any court of competent jurisdiction for urgent injunctive or other interim relief to prevent irreparable harm, without prejudice to the rights of the Parties under this clause."
+
+Override: If MY-Q1 (Labuan IBFC structure) is triggered — use SIAC Singapore as seat instead of AIAC KL.
+If government counterparty — add: "Nothing in this clause shall prevent either Party from seeking relief from the courts of Malaysia in respect of any statutory right that cannot be excluded by agreement."
 
 STAMP DUTY — Stamp Act 1949 (PARAMETERIZED):
-Do NOT auto-apply rate. Insert in Execution section and Commentary:
-"This Agreement is subject to stamp duty under the Stamp Act 1949. LHDN VERIFICATION REQUIRED: Verify applicable rate via MyStamp e-Stamping portal (mystamp.hasil.gov.my) prior to execution. Unstamped instruments are inadmissible as evidence in Malaysian court proceedings."
+Insert in Execution section AND Commentary. Cite Act 378 and specific Schedule Item:
 
-BUMIPUTERA EQUITY (PARAMETERIZED — where equity structure or sector licensing involved):
-Trigger LAWYER_REVIEW when: manufacturing sector (min 30% Bumiputera equity unless MIDA exemption), retail/distribution, government procurement, professional services.
-Insert in Commentary: "BUMIPUTERA EQUITY CHECK REQUIRED: This transaction may be subject to Bumiputera equity participation requirements. Verify with Malaysian legal counsel before completing equity structure or applying for any licence."
+"STAMP DUTY
+This Agreement is subject to stamp duty under the Stamp Act 1949 (Act 378). The Parties shall ensure this Agreement is duly stamped within the period prescribed by the Stamp Act 1949.
+⚠ LHDN VERIFICATION REQUIRED: Before execution, verify the applicable stamp duty item and rate via the LHDN MyStamp e-Stamping portal (mystamp.hasil.gov.my). The standard rate for most commercial agreements is RM10 fixed duty under Item 4, First Schedule, Stamp Act 1949 — however the applicable rate for this specific instrument must be confirmed with LHDN before execution. An unstamped instrument is inadmissible as evidence in any Malaysian court proceeding (Stamp Act 1949 s.52). Cost of stamping to be borne by [STAMP DUTY: specify — Party A / Party B / equally]."
+
+BUMIPUTERA EQUITY (PARAMETERIZED — sector-aware):
+Apply where deal profile flags equity structure, sector licensing, or government procurement. Use sector-aware defaults:
+
+For SOFTWARE / TECHNOLOGY sector:
+"⚠ BUMIPUTERA EQUITY — TECH SECTOR NOTE: Software and technology companies may be eligible for MSC Malaysia status granted by the Malaysia Digital Economy Corporation (MDEC). MSC Malaysia status confers 100% foreign equity ownership exemption regardless of standard Bumiputera equity requirements, plus tax incentives (pioneer status or investment tax allowance), no restrictions on employing foreign knowledge workers, and freedom of ownership. If the Singapore party's business qualifies for MSC Malaysia status, Bumiputera equity requirements may not apply. Confirm MSC Malaysia eligibility at mdec.com.my before agreeing any equity structure. LAWYER_REVIEW required."
+
+For MANUFACTURING sector:
+"Minimum 30% Bumiputera equity historically required. Post-2021 Positive Investment List permits 100% foreign equity for most manufacturing activities. Confirm current MIDA guidelines for the specific MSIC code before agreeing equity structure. LAWYER_REVIEW required."
+
+For DISTRIBUTION / RETAIL sector:
+"Retail below RM5M paid-up capital subject to Bumiputera participation requirements. Distribution may require Bumiputera certification (Sijil Bumiputera) for government procurement. LAWYER_REVIEW required."
+
+For ALL sectors:
+"Nominee Bumiputera equity arrangements are illegal and expose both parties to enforcement risk. Do not agree to nominee arrangements under any circumstances."
+
+MYR CURRENCY — BNM FX Administration Rules (PARAMETERIZED):
+Insert when MYR is payment currency. Cite FX Administration Rules 2021:
+
+"All financial obligations under this Agreement shall be denominated and payable in Malaysian Ringgit (MYR). Cross-border MYR payments are subject to the Financial Services Act 2013 (Act 758) and Bank Negara Malaysia's FX Administration Rules 2021 (effective 15 April 2021). Malaysian residents (including the Malaysian party) must comply with BNM FX Administration Rules for capital account transactions. The Parties shall obtain any required BNM approval before making cross-border payments and shall comply with all applicable reporting requirements under the FX Administration Rules 2021. For guidance: bnm.gov.my/fxadmin."
+
+BAHASA MALAYSIA (PARAMETERIZED):
+"NOTE — NATIONAL LANGUAGE ACT 1963/67 (ACT 32): English is enforceable between private commercial parties in Malaysian courts. Unlike Indonesia (where the Supreme Court has voided English-only commercial contracts under UU No. 24/2009), Malaysian courts routinely enforce English-language commercial agreements between sophisticated parties (Antara Kemajuan Malaysia Sdn Bhd v Koperasi [2019]). However: (i) if this document is to be presented to any Malaysian government authority or regulatory body, a certified Bahasa Malaysia translation may be required; (ii) employment contracts — BM version strongly recommended for labour court proceedings; (iii) franchise agreements — KPDN registration may require BM version. Dual-language option: [PREVAILING LANGUAGE: English / Bahasa Malaysia]. Specify prevailing language if dual-language version prepared."
 
 ────────────────────────────────────────────────────────────────────────────────
 DOCUMENT-SPECIFIC RULES
 ────────────────────────────────────────────────────────────────────────────────
 
 MOU — Table: MOU Clauses (SG-MY):
-Non-binding language must cite Contracts Act 1950 (Act 136) expressly.
-Confidentiality: insert explicit clause (not implied under Malaysian law).
-Stamp duty: MOUs generally not stampable unless containing binding financial obligations — verify with LHDN.
+Non-binding language: cite Contracts Act 1950 (Act 136) expressly. Use "intend", "propose", "contemplate" for non-binding provisions. Use "agree" and "shall" only in Binding Clauses. Reference Tan Ying Hong v Tan Sian San & Ors [2010] principle — Malaysian courts will find binding contract in MOU if terms are sufficiently certain — non-binding architecture must be unambiguous.
+Confidentiality: insert explicit clause with full Confidential Information definition. Malaysian law does not imply confidentiality.
+Non-binding clause: position near front of document (Clause 3 or 4). List all binding carve-outs expressly.
+Stamp duty: MOUs generally attract RM10 fixed duty under Item 4, First Schedule, Stamp Act 1949 — but verify with LHDN.
+SSM registration number format: Malaysian company registration number format is [202XXXXXXX (XXXXXXX-X)] — insert this format in the parties clause and direct to SSM e-info portal (ssm.com.my) for verification.
 
 SERVICE AGREEMENT — Table: Service Agreement Clauses (SG-MY):
-SERVICE TAX: Replace Singapore GST (9%) with Malaysian Service Tax. Current rate: 8% (effective 1 March 2024; 6% retained for specific categories). Threshold: RM500,000 annual turnover. Insert: "All fees are exclusive of Malaysian Service Tax at the prevailing rate. Where applicable, SST shall be charged in addition and borne by the Service Recipient."
-WITHHOLDING TAX: Payments to non-resident service providers — technical/management services 10% (s.109B ITA 1967). Insert gross-up clause where SG entity receives payment from MY entity.
-INDEPENDENT CONTRACTOR: Malaysian courts apply stricter control test. Insert: "The Service Provider is an independent contractor. Solely responsible for all taxes, EPF, SOCSO, EIS obligations in respect of its personnel."
+SERVICE TAX: Replace Singapore GST (9%) with Malaysian Service Tax. Current rate: 8% (effective 1 March 2024 per Service Tax (Amendment) Act 2023; 6% retained for specific categories including food and beverages, telecommunications, parking). Taxable threshold: RM500,000 annual taxable services turnover. Insert:
+"All fees and charges under this Agreement are exclusive of Malaysian Service Tax ("SST") at the prevailing rate under the Service Tax Act 2018 (Act 807). Where the Service Provider is a registered person under the Service Tax Act 2018, SST at the prevailing rate (currently 8%, or such other rate as may be prescribed from time to time) shall be charged in addition to the fees stated herein and shall be borne by the Service Recipient. The Service Provider shall issue valid SST invoices in accordance with the Service Tax Regulations 2018."
+
+WITHHOLDING TAX: Payments to non-resident service providers — technical/management services 10% (s.109B Income Tax Act 1967, Act 53). Insert gross-up clause where SG entity receives payment from MY entity:
+"All payments to the [Singapore party] under this Agreement shall be made free and clear of any deduction or withholding for Malaysian taxes. If the [Malaysian party] is required by law to deduct or withhold any Malaysian tax (including withholding tax under s.109B Income Tax Act 1967) from any payment, the [Malaysian party] shall gross up the payment so that the [Singapore party] receives the full amount it would have received in the absence of such deduction or withholding. The [Malaysian party] shall promptly remit the withheld amount to the Inland Revenue Board of Malaysia (LHDN) and provide the [Singapore party] with the relevant tax receipt."
+
+NOTE FOR COMMENTARY: Technical and management service fees paid to non-residents are subject to 10% WHT under s.109B ITA 1967. The Malaysia-Singapore DTA (Art.7 Business Profits / Art.15 Independent Personal Services) may reduce or eliminate WHT where the SG party does not have a permanent establishment in Malaysia — verify with Malaysian tax adviser.
+
+INDEPENDENT CONTRACTOR: Malaysian courts apply a stricter "control test" (Hoh Kiang Ngan v Mahkamah Perusahaan Malaysia [1995]) than Singapore when determining contractor vs employee status. Insert:
+"The Service Provider is an independent contractor. Nothing in this Agreement shall be construed to create an employment relationship, partnership, or agency between the Parties. The Service Provider shall be solely responsible for all income tax, EPF contributions, SOCSO levies, EIS contributions, and other statutory obligations in respect of its personnel. The Service Provider indemnifies the Service Recipient against any claim by any Malaysian authority that the Service Provider's personnel are employees of the Service Recipient."
 
 EMPLOYMENT — Table: Employment Clauses (SG-MY):
 JURISDICTION GATE — MANDATORY FIRST STEP:
 Check deal profile "Employee Work Location":
-- Peninsular Malaysia → apply EA1955 rules below
-- Sabah → LAWYER_REVIEW: "Sabah Labour Ordinance (Cap. 67) applies. This document covers Peninsular Malaysia only."
-- Sarawak → LAWYER_REVIEW: "Sarawak Labour Ordinance (Cap. 76) applies. Foreign employees require Federal EP + Sarawak Resident Permit. Peninsular Malaysia only."
-KEY STATUTES: Employment Act 1955 (Act 265) applies to employees ≤RM4,000/month or designated roles.
-MANDATORY TERMS (≤RM4,000/month): Minimum wage RM1,500/month. Overtime 1.5x. Annual leave 8/12/16 days by tenure. Sick leave 14/18/22 days + 60 days hospitalisation. Maternity leave 98 days. Notice per EA1955 s.12.
-STATUTORY CONTRIBUTIONS (FULL_AUTO): "Employer shall contribute: (a) EPF/KWSP: 11-13% of monthly wages per EPF Act 1991; (b) SOCSO/PERKESO per Employees Social Security Act 1969; (c) EIS per Employment Insurance System Act 2017."
-EXPATRIATE: Employment Pass required ≥RM5,000/month. Expatriate ratio generally 5:1. Insert EP condition precedent clause.
+- Peninsular Malaysia → apply EA1955 rules below. State in document: "This Agreement is governed by the Employment Act 1955 (Act 265) and applicable Malaysian employment legislation for employees working in Peninsular Malaysia."
+- Sabah → LAWYER_REVIEW gate. Insert: "⚠ LAWYER REVIEW REQUIRED: The Sabah Labour Ordinance (Cap. 67) applies to employees working in Sabah. This document has been drafted for Peninsular Malaysia under the Employment Act 1955 and must be reviewed and amended by Malaysian legal counsel qualified in Sabah employment law before use."
+- Sarawak → LAWYER_REVIEW gate. Insert: "⚠ LAWYER REVIEW REQUIRED: The Sarawak Labour Ordinance (Cap. 76) applies to employees working in Sarawak. Additionally, foreign employees in Sarawak require both a Federal Employment Pass (Immigration Act 1959/63) and a Sarawak Resident Permit under the Immigration Ordinance (Sarawak Cap. 117). This document must be reviewed by Malaysian legal counsel qualified in Sarawak employment law."
+
+KEY STATUTES (Peninsular Malaysia):
+- Employment Act 1955 (Act 265): applies to employees earning ≤RM4,000/month OR in designated manual/supervisory roles per First Schedule EA1955 (as amended by Employment (Amendment) Act 2022, effective 1 January 2023). Employees above RM4,000 are governed by their contract + common law + Industrial Relations Act 1967.
+- Industrial Relations Act 1967 (Act 177): unfair dismissal protections — constructive dismissal claims are common. Termination Without Just Cause (TWJC) risk is significant.
+- EPF Act 1991 (Act 452): mandatory retirement contributions.
+- Employees' Social Security Act 1969 (Act 4) — SOCSO/PERKESO.
+- Employment Insurance System Act 2017 (Act 800) — EIS.
+- Minimum Wages Order 2022: RM1,500/month (effective 1 May 2022 for employers with ≥5 employees; 1 January 2023 for all employers).
+
+MANDATORY EMPLOYMENT TERMS for employees earning ≤RM4,000/month (EA1955 as amended 2022):
+"This Agreement incorporates the following mandatory terms under the Employment Act 1955 (Act 265):
+(a) Minimum wage: RM1,500 per month (Minimum Wages Order 2022);
+(b) Working hours: maximum 45 hours per week (EA1955 s.60A, effective 1 January 2023 — reduced from 48 hours);
+(c) Overtime: 1.5x hourly rate for work beyond 8 hours/day or 45 hours/week;
+(d) Annual leave: 8 days (service < 2 years); 12 days (2–5 years); 16 days (> 5 years);
+(e) Sick leave: 14 days (< 2 years); 18 days (2–5 years); 22 days (> 5 years) + 60 days hospitalisation leave;
+(f) Maternity leave: 98 consecutive days (Employment (Amendment) Act 2021, effective 1 January 2023 — extended from 60 days);
+(g) Paternity leave: 7 consecutive days (Employment (Amendment) Act 2021 — new right);
+(h) Termination notice: as per EA1955 s.12 (4 weeks notice < 2 years; 6 weeks 2–5 years; 8 weeks > 5 years) or salary in lieu;
+(i) Sexual harassment: employer obligation to investigate complaints (EA1955 s.81C–81H as amended 2022)."
+
+STATUTORY CONTRIBUTIONS (FULL_AUTO — insert in ALL employment docs):
+"STATUTORY CONTRIBUTIONS
+The Employer shall make the following mandatory statutory contributions in respect of the Employee:
+(a) Employees Provident Fund (EPF/KWSP): employer contribution of 13% of monthly wages (employee age ≤ 60) or 6.5% (age > 60), pursuant to EPF Act 1991 (Act 452). Employee contribution: 11% (age ≤ 60) or 5.5% (age > 60). Employer shall register with KWSP (kwsp.gov.my) within 7 days of hiring;
+(b) Social Security Organisation (SOCSO/PERKESO): employer and employee contributions as prescribed under the Employees' Social Security Act 1969 (Act 4). Employer shall register with PERKESO (perkeso.gov.my);
+(c) Employment Insurance System (EIS/SIP): employer and employee contributions at 0.4% each of monthly wages, pursuant to the Employment Insurance System Act 2017 (Act 800). Administered by PERKESO;
+(d) Human Resources Development Fund (HRDF/HRD Corp): employer levy of 1% of monthly wages (for employers with ≥10 Malaysian employees or ≥ 5 for specified sectors), pursuant to the Human Resources Development Act 2001.
+The Employee authorises the Employer to deduct the Employee's portion of EPF, SOCSO, and EIS contributions from monthly salary and remit to the respective statutory bodies."
+
+EXPATRIATE EMPLOYMENT (PARAMETERIZED — apply when MY-Q6 = non-Malaysian):
+"EMPLOYMENT PASS
+This offer of employment is conditional upon the Employee obtaining and maintaining a valid Employment Pass or other applicable work authorisation issued by the Immigration Department of Malaysia (Jabatan Imigresen Malaysia) under the Immigration Act 1959/63 (Act 155). The Employer shall apply for the Employment Pass (EP) on behalf of the Employee through the Expatriate Services Division (ESD) portal (esd.imi.gov.my).
+EP categories: Standard EP (≥RM5,000/month, 3 years renewable) / Temporary EP (≥RM5,000/month, 12 months) / Professional Visit Pass (short assignments < 12 months).
+The Employee shall promptly notify the Employer of any change in immigration status. The ratio of expatriate to local employees shall not exceed the guideline ratio prescribed by MIDA (generally 1 expatriate : 5 local employees) unless a MIDA exemption has been obtained.
+[MDEC NOTE: If the Employer holds MSC Malaysia status (MDEC), there are no restrictions on the number of Knowledge Worker Employment Passes — this ratio does not apply. Confirm MSC status with MDEC (mdec.com.my).]"
+
+TERMINATION — INDUSTRIAL RELATIONS ACT 1967 (PARAMETERIZED):
+"INSERT in all employment docs: Termination must be for just cause and excuse under the Industrial Relations Act 1967 (Act 177). Constructive dismissal claims — where an employee resigns due to the employer's breach of contract or unreasonable conduct — are a significant litigation risk in Malaysia. The Industrial Court has jurisdiction over dismissal disputes. Include a 'without prejudice' separation agreement template in Commentary for any deal profile above SGD 300K."
 
 JV AGREEMENT — Table: JV Agreement Clauses (SG-MY):
-VEHICLE: Malaysian Sdn Bhd under Companies Act 2016. Incorporate via MyCoID/SSM. Constitution replaces M&A under CA2016.
+VEHICLE: Malaysian Sdn Bhd (private limited company) under Companies Act 2016 (Act 777). Incorporate via MyCoID portal (mycoID.ssm.com.my). Constitution replaces Memorandum & Articles under CA2016. Single shareholder permitted.
+Insert in parties clause: Malaysian company registration number format: [202XXXXXXX (XXXXXXX-X)] — verify at SSM e-info portal (ssm.com.my).
+
 CA2016 s.346 OPPRESSION CARVE-OUT (PARAMETERIZED + human review flag — CRITICAL):
-Every arbitration clause MUST contain: "Notwithstanding the arbitration agreement, either Party may apply to the Malaysian courts for relief under s.346 Companies Act 2016 in respect of affairs conducted in a manner oppressive to a shareholder." Failure to include this is the most common drafting error in SG→MY JVs.
-FOREIGN EQUITY: Check MIDA sector guidelines. Post-2021 Positive Investment List: 100% foreign equity permitted for most manufacturing/services. Restricted: utilities, broadcasting, financial services, retail <RM5M, professional services. Flag LAWYER_REVIEW for restricted sectors.
+Every arbitration clause MUST contain:
+"Notwithstanding the arbitration agreement in this Agreement, nothing in this Agreement shall prevent either Party from applying to the Malaysian courts for relief under s.346 of the Companies Act 2016 (Act 777) in respect of the affairs of [JV Co] being conducted in a manner oppressive to, or in disregard of, the interests of any shareholder. The Malaysian courts shall retain exclusive jurisdiction over s.346 oppression claims notwithstanding any arbitration agreement."
+COMMENTARY NOTE: This carve-out is the most commonly missed drafting point in SG→MY JV agreements drafted by Singapore counsel. SIAC tribunals will decline jurisdiction over CA2016 s.346 claims — omission of this carve-out leaves a party without a practical remedy for oppression. Flag prominently in all JV and SHA documents.
+
+FOREIGN EQUITY SECTOR MATRIX (PARAMETERIZED — use sector from MY-Q3):
+- Technology/Software (MSC Malaysia status): 100% foreign equity. Confirm MDEC eligibility.
+- Manufacturing (general): 100% foreign equity post-2021 Positive Investment List for most activities. Confirm specific MSIC code with MIDA (mida.gov.my).
+- Financial services: Bank Negara Malaysia approval required. Foreign equity limits vary by licence type.
+- Retail (< RM5M paid-up): Bumiputera participation required. LAWYER_REVIEW.
+- Professional services (law, architecture, engineering): foreign equity restrictions. LAWYER_REVIEW.
+- Healthcare, education: foreign equity limits. LAWYER_REVIEW.
+
+DEADLOCK MECHANISM: Insert Malaysian-law compliant mechanism:
+"In the event of a Deadlock (as defined herein), the Parties shall refer the matter to their respective [CEOs / Boards] for resolution within [30] days. If unresolved, either Party may serve a buy-sell (shotgun) notice pursuant to Schedule [X]. Any buy-sell mechanism shall be subject to: (i) pre-emptive rights under the Constitution of [JV Co]; (ii) the Companies Act 2016 (Act 777); and (iii) any applicable foreign equity restrictions."
 
 SHAREHOLDERS AGREEMENT — Table: Shareholders Agreement Clauses (SG-MY):
-All JV rules above apply plus:
-CONSTITUTION ALIGNMENT (PARAMETERIZED + human review): "Parties shall procure Constitution of [Co] is amended to be consistent with this Agreement within 30 days of execution. In event of conflict, this Agreement shall prevail as between the Parties."
-DIVIDENDS: Malaysian Sdn Bhd operates under single-tier tax system. Dividends paid to SG shareholders are exempt from further WHT. Confirm single-tier status in Tax Warranties.
-DRAG/TAG: Must be consistent with Constitution and must not constitute CA2016 s.346 oppression.
+All JV rules above apply. Additional SHA-specific rules:
+
+CONSTITUTION ALIGNMENT (PARAMETERIZED + human review — CRITICAL):
+"The Parties shall procure that the Constitution of [Co] is amended to be consistent with this Agreement within [30] days of execution. In the event of any conflict between this Agreement and the Constitution: (i) as between the Parties inter se, this Agreement shall prevail; (ii) as between [Co] and third parties, the Constitution shall prevail (Companies Act 2016 s.31). The Parties shall not take any action under the Constitution that is inconsistent with this Agreement without the written consent of the other Party."
+NOTE: Under CA2016, the Constitution is the public-facing document registered with SSM. SHA provisions that conflict with the Constitution are unenforceable against third parties. Any SHA amendment mechanism must require corresponding Constitution amendment.
+
+DIVIDENDS — SINGLE-TIER TAX SYSTEM:
+"NOTE: Malaysian Sdn Bhd operates under the single-tier corporate tax system (Finance Act 2007). Dividends paid by a Malaysian Sdn Bhd to Singapore shareholders are exempt from further withholding tax — no dividend WHT applies on SG↔MY distributions. Insert in Tax Warranties: 'The Company is a single-tier taxpayer and all dividends paid or to be paid are exempt from further tax in the hands of shareholders.'"
+
+DRAG/TAG: Must be consistent with Constitution and must not constitute CA2016 s.346 oppression. Drag-along must include minimum price protection to avoid oppression argument.
 
 EXCLUSIVE DISTRIBUTION — Table: Exclusive Distribution Clauses (SG-MY):
-TERRITORY: Define precisely — Peninsular Malaysia only / East Malaysia / All Malaysia. East Malaysia has additional customs considerations.
-IMPORT LICENSING: "Distributor shall obtain and maintain all licences under Customs Act 1967 for importation, distribution, and sale of Products."
-SALES TAX: Applies at manufacturer/importer level — 5% or 10% depending on classification. Distinct from SG GST.
-IMPLIED EXCLUSIVITY RISK (PARAMETERIZED — CRITICAL): Insert express exclusivity obligation on Principal: "Principal shall not during Exclusivity Period directly or indirectly appoint any other distributor or agent for Products within Territory."
-HALAL: If food/beverage/cosmetics marketed as halal — JAKIM certification mandatory. Flag LAWYER_REVIEW.
+TERRITORY: Define precisely. Options: Peninsular Malaysia only / East Malaysia (Sabah + Sarawak) / All Malaysia.
+NOTE FOR COMMENTARY: East Malaysia (Sabah + Sarawak) has separate customs zones and import licensing requirements — additional due diligence required. Specify separately if East Malaysia is included.
+
+IMPORT LICENSING (PARAMETERIZED — apply where goods are physical):
+"The Distributor shall obtain and maintain all licences, permits, and approvals required under Malaysian law for the importation, distribution, and sale of the Products, including but not limited to:
+(a) any import licence required under the Customs Act 1967 (Act 235);
+(b) any product-specific approval required from the Ministry of Domestic Trade and Cost of Living (KPDN) or relevant sector regulator;
+(c) Halal certification from the Department of Islamic Development Malaysia (JAKIM) if the Products are marketed as halal — mandatory for food, beverages, cosmetics, and pharmaceuticals sold to Muslim consumers (Halal Industry Development Corporation Act 2006);
+(d) National Pharmaceutical Regulatory Agency (NPRA) registration if the Products are health supplements or medical devices."
+
+SALES TAX (PARAMETERIZED — apply where goods are physical):
+"Sales tax under the Sales Tax Act 2018 (Act 806) applies to taxable goods at the manufacturer or importer level. Standard rate: 10% (general goods); 5% (specified goods); 0% (exempt goods). The Distributor, as importer of record, shall be responsible for all applicable sales tax on the Products. The Principal shall cooperate with the Distributor to provide all necessary documentation for sales tax compliance."
+
+IMPLIED EXCLUSIVITY RISK (FULL_AUTO — CRITICAL):
+Insert express exclusivity obligation in EVERY exclusive distribution agreement:
+"The Principal shall not, during the Exclusivity Period, directly or indirectly: (a) appoint any other distributor, agent, reseller, or representative for the Products within the Territory; (b) sell, supply, or distribute the Products directly to any customer within the Territory; or (c) accept any unsolicited order for the Products from a customer located in the Territory. This obligation is an express and material term of this Agreement, the breach of which shall entitle the Distributor to seek injunctive relief under the Specific Relief Act 1950 (Act 137) in addition to damages."
+NOTE FOR COMMENTARY: Malaysian courts may imply this obligation regardless — but an express clause removes all ambiguity and strengthens the Distributor's injunctive relief application.
 
 IP LICENCE — Table: IP Licence Clauses (SG-MY):
-IP REGISTRY: Malaysian IP registered with MyIPO. Patents Act 1983, Trade Marks Act 2019, Copyright Act 1987, Industrial Designs Act 1996.
-WITHHOLDING TAX ON ROYALTIES (FULL_AUTO — CRITICAL):
-10% WHT under s.109 ITA 1967. ⚠️ CRITICAL NOTE: The Malaysia-Singapore DTA (Article 12) does NOT reduce royalty WHT below the standard 10% rate. This is counterintuitive and frequently misunderstood.
-Insert in Commentary: "⚠️ WITHHOLDING TAX ON ROYALTIES — 10% (DTA DOES NOT REDUCE): Royalty payments from Malaysian licensee to Singapore licensor are subject to 10% WHT under s.109 ITA 1967. The Malaysia-Singapore DTA Art.12 does NOT reduce this rate. WHT must be deducted at source and remitted to LHDN within 30 days."
-Insert gross-up clause: "All royalties shall be paid free and clear of withholding. If WHT is required, Licensee shall gross up so Licensor receives full royalty amount after deduction."
-TRANSFER PRICING (PARAMETERIZED — related parties): "⚠️ TRANSFER PRICING: Related party royalties require contemporaneous TP documentation under Income Tax (Transfer Pricing) Rules 2012. Flag LAWYER_REVIEW."
+IP REGISTRY — MyIPO (FULL_AUTO reference):
+"All intellectual property rights licensed under this Agreement are subject to registration or registration rights with the Intellectual Property Corporation of Malaysia (MyIPO, myipo.gov.my):
+- Patents: Patents Act 1983 (Act 291)
+- Trademarks: Trade Marks Act 2019 (Act 815) — replaced the Trade Marks Act 1976
+- Copyright: Copyright Act 1987 (Act 332) — no registration required; subsists automatically
+- Industrial Designs: Industrial Designs Act 1996 (Act 552)
+The Licensor represents and warrants that: (a) all registered IP is duly registered and in good standing at MyIPO; and (b) all unregistered IP (including copyright and trade secrets) is owned by the Licensor free from encumbrances."
+
+WITHHOLDING TAX ON ROYALTIES (FULL_AUTO — CRITICAL — insert prominently):
+"⚠ WITHHOLDING TAX ON ROYALTIES — 10% (MALAYSIA-SINGAPORE DTA DOES NOT REDUCE)
+Royalty payments from the Malaysian Licensee to the Singapore Licensor are subject to withholding tax at 10% under s.109 Income Tax Act 1967 (Act 53).
+CRITICAL NOTE: The Double Taxation Agreement between Malaysia and Singapore (signed 26 December 1968, revised 1996) Article 12 (Royalties) sets the withholding tax rate at 10%. This is the same as the Malaysian domestic rate under s.109 ITA 1967. Unlike many other Malaysia DTAs (e.g. Malaysia-Netherlands DTA where royalty WHT is reduced to 8%), the Malaysia-Singapore DTA provides NO reduction below the standard 10% rate. This is counterintuitive and frequently misunderstood by practitioners familiar with other Malaysia DTAs.
+Insert gross-up clause in EVERY IP Licence:
+'All royalties shall be paid free and clear of any deduction or withholding for Malaysian taxes. If the Licensee is required by law to deduct or withhold Malaysian withholding tax (currently 10% under s.109 ITA 1967), the Licensee shall gross up each royalty payment so that the Licensor receives a net amount equal to the full royalty after deduction of such withholding tax. The Licensee shall remit the withheld amount to LHDN within 30 days of payment and shall provide the Licensor with the relevant LHDN withholding tax certificate (CP37) promptly thereafter.'
+WHT applies to: royalties for use of patents, trademarks, designs, copyright, secret processes, know-how, and software licences.
+WHT does NOT typically apply to: purchase price for outright IP assignment (treated as capital gain — not subject to income tax in Malaysia for non-resident sellers, subject to RPGT rules if real property involved)."
+
+TRANSFER PRICING (PARAMETERIZED — apply when MY-Q5 = related parties):
+"⚠ TRANSFER PRICING — RELATED PARTY ROYALTIES
+The royalty rate under this Agreement is subject to transfer pricing scrutiny under the Income Tax (Transfer Pricing) Rules 2012 and the LHDN Transfer Pricing Guidelines 2012 (revised 2023). As the Licensor and Licensee are related parties (as defined under s.140A Income Tax Act 1967), the royalty rate must: (a) be set at arm's length; and (b) be supported by contemporaneous transfer pricing documentation prepared before the filing of the relevant tax returns.
+⚠ LAWYER_REVIEW REQUIRED: Engage Malaysian tax advisers to prepare transfer pricing documentation before this Agreement takes effect. LHDN has significantly increased transfer pricing audits since 2021. Penalties for non-arm's length pricing: surcharge of 5% on understated income plus late payment penalties."
 
 FRANCHISE AGREEMENT — Table: Franchise Agreement Clauses (SG-MY):
-⚠️ HIGHEST COMPLEXITY DOCUMENT — Franchise Act 1998 (Act 590) applies.
-SCOPE NOTE (insert in every Commentary output):
-"⚠️ FRANCHISE ACT 1998 SCOPE NOTE: The following are OUT OF SCOPE and MUST be handled by a Malaysian franchise lawyer: (1) Franchise registration with KPDN — mandatory before any franchise offer in Malaysia; (2) Franchise Disclosure Document (FDD) preparation; (3) s.6 FDD disclosure period (10 days minimum before signing); (4) FDD format compliance per Franchise (Disclosure Document) Regulations 1999."
-PRE-EXECUTION CHECKLIST (insert in Commentary):
-"📋 FRANCHISE PRE-EXECUTION CHECKLIST:
-□ 1. Franchisor registered with KPDN (efranchise.kpdn.gov.my)
-□ 2. FDD prepared per FA1998 Regulations
-□ 3. FDD provided to Franchisee minimum 10 days before signing (s.6 FA1998)
-□ 4. Franchise fee/royalty structure complies with FA1998 s.18
-□ 5. Territory exclusivity reviewed against FA1998 s.24 renewal right
-□ 6. Termination provisions comply with FA1998 s.27"
-NO TERMINATION FOR CONVENIENCE (FULL_AUTO — CRITICAL): s.27 FA1998 prohibits termination without cause. Replace any termination for convenience clause: "Franchisor may terminate only upon: [cause events]. Termination for convenience is not permitted under s.27 Franchise Act 1998."
-RENEWAL RIGHT (FULL_AUTO): s.24 FA1998 right of first refusal to renew. Insert: "Subject to Franchisee compliance, Franchisee shall have right of first refusal to renew on terms no less favourable than those offered to a new franchisee for the same territory, pursuant to s.24 Franchise Act 1998."
+⚠ HIGHEST COMPLEXITY DOCUMENT — Franchise Act 1998 (Act 590) applies.
+
+SCOPE NOTE (FULL_AUTO — insert in EVERY Franchise Commentary output):
+"⚠ FRANCHISE ACT 1998 (ACT 590) — MANDATORY SCOPE NOTE
+This Qarta Legal adaptation addresses the contractual content of the Franchise Agreement. The following steps are MANDATORY under the Franchise Act 1998 (Act 590) and are OUT OF SCOPE of this adaptation — they MUST be completed by a Malaysian franchise lawyer before any franchise offer is made:
+(1) Franchisor registration with the Ministry of Domestic Trade and Cost of Living (KPDN) — mandatory before offering any franchise in Malaysia (FA1998 s.6). Check registration status: efranchise.kpdn.gov.my
+(2) Franchise Disclosure Document (FDD) preparation — must comply with Franchise (Disclosure Document) Regulations 1999
+(3) FDD disclosure period — minimum 10 days must elapse between FDD delivery and Agreement signing (FA1998 s.6(2))
+(4) FDD format compliance including audited accounts, litigation history, financial performance representations
+(5) KPDN franchise registration number must appear on all franchise-related documents
+(6) Foreign franchisor: must establish local presence or appoint licensed Malaysian franchise agent before registering
+This document is NOT execution-ready without completion of steps (1)–(6) above."
+
+PRE-EXECUTION CHECKLIST (FULL_AUTO — insert in Commentary):
+"📋 FRANCHISE ACT 1998 PRE-EXECUTION CHECKLIST:
+□ 1. Franchisor registered with KPDN — efranchise.kpdn.gov.my (FA1998 s.6) — MANDATORY
+□ 2. KPDN registration number obtained and to be inserted in Agreement
+□ 3. FDD prepared in compliance with Franchise (Disclosure Document) Regulations 1999
+□ 4. FDD delivered to Franchisee — date: [DATE OF FDD DELIVERY]
+□ 5. 10-day disclosure period elapsed before execution (FA1998 s.6(2)) — execution date must be no earlier than [FDD DELIVERY DATE + 10 DAYS]
+□ 6. Franchise fee and royalty structure reviewed against FA1998 s.18
+□ 7. Renewal right (FA1998 s.24) — addressed in Agreement
+□ 8. No termination for convenience clause removed / not present (FA1998 s.27)
+□ 9. Foreign franchisor: local presence or licensed agent confirmed
+□ 10. Bahasa Malaysia version prepared if required by KPDN"
+
+NO TERMINATION FOR CONVENIENCE (FULL_AUTO — CRITICAL):
+Section 27 FA1998 prohibits termination without cause. Replace ANY termination for convenience clause:
+"The Franchisor may only terminate this Agreement prior to its expiry upon the occurrence of one or more of the following events of default by the Franchisee:
+(a) material breach of this Agreement that is not remedied within [30] days of written notice;
+(b) insolvency, winding up, or appointment of a receiver or administrator in respect of the Franchisee;
+(c) conviction of the Franchisee or its principals for any criminal offence involving dishonesty or moral turpitude;
+(d) any act or omission by the Franchisee that materially damages the reputation of the franchise system or the Franchisor's intellectual property.
+For the avoidance of doubt, the Franchisor shall not terminate this Agreement for convenience or without cause. Termination for convenience is prohibited under s.27 Franchise Act 1998 (Act 590)."
+
+RENEWAL RIGHT (FULL_AUTO):
+"Subject to the Franchisee's compliance with this Agreement, the Franchisee shall have a right of first refusal to renew this Agreement upon its expiry for a further term on terms no less favourable than those offered to any new franchisee for the same territory, pursuant to s.24 Franchise Act 1998 (Act 590). The Franchisor shall provide the Franchisee with written notice of renewal terms no later than [6 months] before the expiry of this Agreement."
 
 ────────────────────────────────────────────────────────────────────────────────
 SG→MY DEAL PROFILE QUESTIONS
 ────────────────────────────────────────────────────────────────────────────────
 
-In addition to universal Section A deal profile questions, ask:
-MY-Q1: Labuan IBFC structure? YES → LAWYER_REVIEW, SIAC Singapore seat, Labuan Business Activity Tax Act 1990 implications.
-MY-Q2 (Employment): Employee work location? Peninsular / Sabah / Sarawak → see jurisdiction gate above.
-MY-Q3 (JV/SHA/Franchise): Primary business sector in Malaysia? → Check MIDA restricted sectors.
-MY-Q4 (Distribution/Franchise): Products include food, beverage, cosmetics, health? YES → JAKIM Halal + NPRA check.
-MY-Q5 (IP Licence): Licensor and Licensee related parties? YES → transfer pricing documentation.
-MY-Q6 (Employment): Employee non-Malaysian? YES → Employment Pass rules.
+In addition to universal Section A deal profile questions, ask for every SG→MY document:
+MY-Q1: Is the transaction structured via a Labuan IBFC entity? YES → LAWYER_REVIEW, use SIAC Singapore as arbitration seat (not AIAC KL), note Labuan Business Activity Tax Act 1990 (Act 445) and BEPS substance requirements.
+MY-Q2 (Employment only): Employee's place of work? → Peninsular Malaysia / Sabah / Sarawak. See jurisdiction gate above.
+MY-Q3 (JV/SHA/Franchise/Distribution): Primary business sector in Malaysia? → Apply sector-specific Bumiputera and equity rules above. Check MSC Malaysia eligibility for tech.
+MY-Q4 (Distribution/Franchise): Do the Products include food, beverages, cosmetics, health supplements, or pharmaceuticals? YES → JAKIM Halal certification flag + NPRA izin edar (product registration) flag.
+MY-Q5 (IP Licence): Are the Licensor and Licensee related parties? YES → Transfer pricing documentation mandatory. Engage Malaysian tax adviser before Agreement takes effect.
+MY-Q6 (Employment): Is the Employee a non-Malaysian national? YES → Apply Employment Pass rules. Check MSC Malaysia status for Knowledge Worker EP (no ratio restriction).
+MY-Q7 (ALL documents): Is either party a Government-Linked Company (GLC) or government entity? YES → Bumiputera procurement rules apply; arbitration carve-out for statutory rights required; additional approvals may be needed.
 
 ────────────────────────────────────────────────────────────────────────────────
 CERTAINTY HIERARCHY — SG→MY
 ────────────────────────────────────────────────────────────────────────────────
 
-FULL_AUTO: Governing law → Malaysian law / CA1950 | MACC Act s.17A clause | PDPA 2010 (MY) clause | EPF/SOCSO/EIS (Employment) | WHT 10% note (IP Licence) | Franchise s.27 + s.24 | AIAC arbitration (unless MY-Q1 override)
+FULL_AUTO (insert unconditionally — no deal profile input required):
+- Governing law → Malaysian law / Contracts Act 1950 (Act 136)
+- Non-compete replacement → Competitive Protection clause (confidentiality-based)
+- MACC Act 2009 s.17A corporate liability clause (full 4-part clause)
+- PDPA 2010 (MY) dual-layer clause (MY PDPA + SG PDPA)
+- EPF / SOCSO / EIS / HRDF contributions (Employment)
+- WHT 10% note + gross-up clause (IP Licence)
+- BNM FX Administration Rules 2021 flag (MYR currency)
+- Franchise s.27 no-termination-for-convenience (Franchise)
+- Franchise s.24 renewal right (Franchise)
+- AIAC arbitration — AIAC Arbitration Rules 2023, Arbitration Act 2005 (Act 646) (unless MY-Q1 override)
+- Implied exclusivity obligation (Exclusive Distribution)
+- SSM registration number format [202XXXXXXX (XXXXXXX-X)] in parties clause (all docs)
+- MyIPO IP registration representations (IP Licence)
 
-PARAMETERIZED: Stamp duty verification (all) | Bumiputera equity flag (JV/SHA/DA/Franchise/MOU) | Expatriate EP rules (Employment MY-Q6) | Transfer pricing (IP Licence MY-Q5) | Sabah/Sarawak gate (Employment MY-Q2) | Service Tax 8% (SA/Distribution) | Labuan IBFC (JV/SHA/IP Licence MY-Q1) | WHT gross-up (SA/IP Licence) | Import licensing/Halal (Distribution/Franchise MY-Q4)
+PARAMETERIZED (insert based on deal profile inputs):
+- Stamp duty clause — Stamp Act 1949 (Act 378) Item 4 (all docs)
+- Bumiputera equity flag — sector-aware (JV/SHA/DA/Franchise/MOU)
+- MSC Malaysia status flag — tech/software sector (JV/SHA/Employment)
+- Expatriate Employment Pass clause (Employment — MY-Q6)
+- MDEC Knowledge Worker EP note (Employment — MY-Q6 + MY-Q3 tech)
+- Transfer pricing flag (IP Licence — MY-Q5)
+- Sabah/Sarawak jurisdiction gate (Employment — MY-Q2)
+- Service Tax 8% / SST — Service Tax Act 2018 (SA/Distribution)
+- Sales Tax 10%/5% — Sales Tax Act 2018 (Distribution)
+- Labuan IBFC override — Labuan Companies Act 1990 (JV/SHA/IP Licence — MY-Q1)
+- WHT gross-up for service fees — s.109B ITA 1967 (SA)
+- JAKIM Halal + NPRA flag (Distribution/Franchise — MY-Q4)
+- HRDF levy note (Employment — ≥10 employees)
+- Constitution alignment clause (SHA)
+- Bursa Malaysia listed entity announcement carve-out (MOU/SHA/JV)
+- East Malaysia customs note (Distribution — if territory includes Sabah/Sarawak)
+- Personal Data Protection (Amendment) Bill 2024 monitoring note (all docs)
 
-LAWYER_REVIEW: Non-compete s.28 CA1950 (all) | CA2016 s.346 oppression carve-out (JV/SHA) | Foreign equity restricted sectors (JV/SHA) | Sabah/Sarawak employment | Labuan IBFC structure | Franchise non-compete | KPDN registration (out of scope) | Constitution alignment (SHA) | Government counterparty arbitration carve-out
+LAWYER_REVIEW (flag and suspend auto-insertion — human review required):
+- Non-compete/restraint: Competitive Protection clause inserted as replacement, but LAWYER_REVIEW flag must appear above it (s.28 CA1950)
+- CA2016 s.346 oppression carve-out (JV/SHA) — verify arbitration clause contains carve-out
+- Foreign equity in restricted sectors (JV/SHA — MY-Q3)
+- Sabah/Sarawak employment (Employment — MY-Q2)
+- Labuan IBFC structure (any doc — MY-Q1)
+- Franchise non-compete replacement (Franchise — FR-MY-009)
+- KPDN franchise registration (Franchise — out of scope, but flag)
+- Constitution alignment (SHA — SHA-MY-001)
+- Government counterparty (any doc — MY-Q7)
+- MY PDPA s.40 sensitive personal data (any doc where sensitive data involved)
+- Industrial Relations Act 1967 constructive dismissal risk (Employment — high value)
+- Transfer pricing documentation (IP Licence — MY-Q5)
 
-REFERENCE_ONLY: Labuan IBFC structures (3 canonical) | MIDA investment incentives | Bumiputera certification process | KPDN franchise registration process
+REFERENCE_ONLY (explain and note, do not draft):
+- Labuan IBFC canonical structures (3 structures: HoldCo / IP Co / Treasury)
+- MIDA investment incentives and pioneer status
+- Bumiputera certification (Sijil Bumiputera) process
+- KPDN franchise registration process
+- MSC Malaysia application process (MDEC)
+- Malaysia-Singapore DTA full text reference
 
 ────────────────────────────────────────────────────────────────────────────────
 OUTPUT FORMAT — SG→MY
 ────────────────────────────────────────────────────────────────────────────────
 
-Output 1 (Clean): English. Malaysian law governing clause. All SG statutory references replaced with Malaysian equivalents.
-Output 2 (Redline): All changes tracked. Deletions strikethrough, additions underlined.
-Output 3 (Commentary): Sections: [GOVERNING LAW] [MANDATORY COMPLIANCE — MACC/PDPA/Stamp Duty] [COMMERCIAL FLAGS — WHT/SST/Transfer Pricing] [LAWYER REVIEW ITEMS — numbered list] [DOCUMENT-SPECIFIC NOTES] [PRE-EXECUTION CHECKLIST — Franchise only]. All items must cite specific Malaysian statute and section number.
+Output 1 (Clean): English. Malaysian law governing clause citing Contracts Act 1950 (Act 136). All SG statutory references replaced with Malaysian equivalents with full Act numbers. Competitive Protection clause replaces non-compete. AIAC replaces SIAC. SST replaces GST. Malaysian company registration number format applied. No redline marks.
 
-QUALITY SCORE TARGETS: MOU 88-92 | SA 90-94 | Employment 88-93 | JV 87-92 | SHA 87-92 | Distribution 89-93 | IP Licence 88-93 | Franchise 85-90 (capped — KPDN out of scope)
+Output 2 (Redline): All changes tracked. Deletions in strikethrough, additions underlined. Each change labelled with: (i) Certainty Level (FULL_AUTO / PARAMETERIZED / LAWYER_REVIEW); (ii) Strategy code (STR-001 Replace / STR-002 Rewrite / STR-003 Insert / STR-004 Remove); (iii) Concept ID from LCM records where applicable.
+
+Output 3 (Commentary): Mandatory sections in this order:
+[A] DEAL PROFILE APPLICATION SUMMARY — table format
+[B] GOVERNING LAW — Malaysian law basis, CA1950 citation
+[C] MANDATORY COMPLIANCE — MACC s.17A / PDPA 2010 / Stamp Duty — each with PDPA compliance checklist
+[D] COMMERCIAL FLAGS — WHT rates / SST / Transfer Pricing / BNM FX / MSC Malaysia — cite specific statute and section for every flag
+[E] LAWYER REVIEW ITEMS — numbered list, each with: (i) clause reference; (ii) issue description; (iii) statutory basis with Act number and section; (iv) specific recommended action
+[F] CLAUSE-BY-CLAUSE COMMENTARY — every adapted clause with: Original / Change / Reason / SG→MY Note / Action Required
+[G] DOCUMENT-SPECIFIC NOTES — from document-specific rules above
+[H] PRE-EXECUTION CHECKLIST — Franchise only (FA1998 checklist)
+
+QUALITY STANDARD: Every statutory reference MUST include the Act name, Act number, and section number. Generic references to "applicable Malaysian law" are NOT acceptable. Every Lawyer Review item must specify exactly what Malaysian counsel must do and which statute they must advise on.
+
+QUALITY SCORE TARGETS:
+MOU: 94-96 | Service Agreement: 93-95 | Employment: 93-96 | JV: 92-95 | SHA: 92-95 | Exclusive Distribution: 93-96 | IP Licence: 93-96 | Franchise: 91-94 (ceiling reflects KPDN out-of-scope)
 
 === END PART 11 ===
