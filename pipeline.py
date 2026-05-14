@@ -22,6 +22,7 @@ OUTPUT_HEADERS = [
 
 # block1 part number that contains doc-type-specific drafting rules
 DOC_TYPE_PART_MAP = {
+    # CN-SG doc-type-specific parts (only used when no corridor part is loaded)
     "mou":                                   7,
     "memorandum_of_understanding":           7,
     "jv_agreement":                          8,
@@ -31,6 +32,16 @@ DOC_TYPE_PART_MAP = {
     "exclusive_distribution_agreement":      9,
     "non_exclusive_distribution":            9,
     "non_exclusive_distribution_agreement":  9,
+    # SG-MY-exclusive doc types (not present in CN_SG; Part 11 is their corridor part)
+    "ip_licence":                            11,
+    "ip_license":                            11,
+    "franchise":                             11,
+    "franchise_agreement":                   11,
+    "sha":                                   11,
+    "shareholders_agreement":                11,
+    "employment":                            11,
+    "employment_contract":                   11,
+    "service_agreement":                     11,
 }
 
 # block1 part number that contains corridor-level adaptation rules
@@ -138,9 +149,13 @@ def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
             else:
                 print(f"[pipeline] WARNING: Part {corr_part_num} not found for corridor {corr}")
 
-        # Doc-type-specific rules (Part 7 MOU / Part 8 JV / Part 9 Distribution)
+        # Doc-type-specific rules (Part 7 MOU / Part 8 JV / Part 9 Distribution).
+        # Skipped when a corridor part is already loaded (corr_part_num is not None),
+        # because corridor parts (Part 10 SG_ID, Part 11 SG_MY) are self-contained
+        # and include doc-type rules — loading Part 7/8/9 alongside would be
+        # contradictory, wasteful, and risks pushing the prompt over the token limit.
         doc_part_num = DOC_TYPE_PART_MAP.get(doc_type.lower())
-        if doc_part_num:
+        if doc_part_num and corr_part_num is None:
             dp = _extract_part(b1_raw, doc_part_num)
             if dp:
                 selected.append(dp)
