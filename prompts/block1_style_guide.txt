@@ -1556,10 +1556,11 @@ MANDATORY EMPLOYMENT TERMS for employees earning ≤RM4,000/month (EA1955 as ame
 (c) Overtime: 1.5x hourly rate for work beyond 8 hours/day or 45 hours/week;
 (d) Annual leave: 8 days (service < 2 years); 12 days (2–5 years); 16 days (> 5 years);
 (e) Sick leave: 14 days (< 2 years); 18 days (2–5 years); 22 days (> 5 years) + 60 days hospitalisation leave;
-(f) Maternity leave: 98 consecutive days (Employment (Amendment) Act 2021, effective 1 January 2023 — extended from 60 days);
-(g) Paternity leave: 7 consecutive days (Employment (Amendment) Act 2021 — new right);
+(f) Maternity leave: 98 consecutive days (Employment (Amendment) Act 2021, effective 1 January 2023 — extended from 60 days). NOTE: There is NO government reimbursement scheme in Malaysia — the full 98-day cost is borne entirely by the Employer. This is a material cost difference from Singapore (where GPML reimburses up to 16 weeks for Singapore Citizen births). Flag this cost implication explicitly in Commentary;
+(g) Paternity leave: 7 consecutive days of paid paternity leave for male employees — NEW MANDATORY RIGHT introduced by Employment (Amendment) Act 2021, effective 1 January 2023. This right did not exist before 2023. FULL_AUTO: insert in every employment contract. Commentary must explicitly flag this as a new mandatory entitlement that cannot be contractually excluded or reduced;
 (h) Termination notice: as per EA1955 s.12 (4 weeks notice < 2 years; 6 weeks 2–5 years; 8 weeks > 5 years) or salary in lieu;
-(i) Sexual harassment: employer obligation to investigate complaints (EA1955 s.81C–81H as amended 2022)."
+(i) Sexual harassment: employer obligation to investigate complaints (EA1955 s.81C–81H as amended 2022);
+(j) EA1955 SALARY CAP REMOVED — FULL COVERAGE: The Employment (Amendment) Act 2022 (effective 1 January 2023) removed the RM4,000/month salary threshold entirely. EA1955 now applies to ALL employees in Peninsular Malaysia regardless of salary level. MANDATORY COMMENTARY FLAG: Every employment adaptation must prominently state — "NOTE: The Employment Act 1955 (Act 265) applies to this Employee regardless of salary level. The RM4,000/month salary threshold was removed by the Employment (Amendment) Act 2022 effective 1 January 2023. All mandatory minimums in this Contract (working hours, leave, overtime, notice periods) are non-negotiable statutory requirements that cannot be reduced by agreement regardless of the Employee's seniority or salary.""
 
 STATUTORY CONTRIBUTIONS (FULL_AUTO — insert in ALL employment docs):
 "STATUTORY CONTRIBUTIONS
@@ -1716,6 +1717,9 @@ FULL_AUTO (insert unconditionally — no deal profile input required):
 - MACC Act 2009 s.17A corporate liability clause (full 4-part clause)
 - PDPA 2010 (MY) dual-layer clause (MY PDPA + SG PDPA)
 - EPF / SOCSO / EIS / HRDF contributions (Employment)
+- Paternity leave 7 days — Employment (Amendment) Act 2021 (Employment)
+- EA1955 full-coverage note — salary cap removed effective 1 January 2023 (Employment)
+- Maternity leave cost note — no government reimbursement in Malaysia (Employment)
 - WHT 10% note + gross-up clause (IP Licence)
 - BNM FX Administration Rules 2021 flag (MYR currency)
 - Franchise s.27 no-termination-for-convenience (Franchise)
