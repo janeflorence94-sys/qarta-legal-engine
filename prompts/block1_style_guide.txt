@@ -1632,6 +1632,20 @@ Insert express exclusivity obligation in EVERY exclusive distribution agreement:
 "The Principal shall not, during the Exclusivity Period, directly or indirectly: (a) appoint any other distributor, agent, reseller, or representative for the Products within the Territory; (b) sell, supply, or distribute the Products directly to any customer within the Territory; or (c) accept any unsolicited order for the Products from a customer located in the Territory. This obligation is an express and material term of this Agreement, the breach of which shall entitle the Distributor to seek injunctive relief under the Specific Relief Act 1950 (Act 137) in addition to damages."
 NOTE FOR COMMENTARY: Malaysian courts may imply this obligation regardless — but an express clause removes all ambiguity and strengthens the Distributor's injunctive relief application.
 
+MINIMUM PURCHASES (PARAMETERIZED — apply where minimum purchase commitment exists):
+When the source document specifies a minimum purchase commitment in SGD, FULL_AUTO conversion applies:
+  (a) Convert to MYR using the BNM published reference rate on the Effective Date. Suggested starting point: SGD 1 ≈ MYR 3.40–3.50 (verify at bnm.gov.my on the date of adaptation).
+  (b) ALWAYS suggest a specific MYR equivalent in Commentary as a starting point for the parties — do not leave blank. Example: "SGD 350,000 at the indicative BNM rate of MYR 3.44 = approximately MYR 1,204,000 — parties should confirm and fix the MYR amount before execution."
+  (c) Recommend a fixed MYR amount (not a floating SGD-equivalent) to avoid FX disputes over the term.
+  (d) For multi-year agreements, recommend annual CPI adjustment or fixed escalation (e.g. 5% per year) for Year 2+ minimums.
+
+PERFORMANCE-BASED EXCLUSIVITY CONVERSION (FULL_AUTO — flag in ALL exclusive distribution agreements):
+This is a mandatory flag for every exclusive distribution adaptation. Where a source document contains a minimum purchase commitment that, if unmet, triggers conversion from exclusive to non-exclusive:
+  (a) ALWAYS explicitly flag this conversion mechanism in Commentary under a dedicated heading: "⚠ EXCLUSIVITY AT RISK — PERFORMANCE TRIGGER"
+  (b) Insert the following Commentary note: "The Distributor's exclusive appointment is conditional on meeting the Minimum Purchase Commitment in each calendar year (Clause [X]). Failure to meet the Minimum Purchase Commitment triggers the Principal's right to convert the appointment to non-exclusive on [60/90] days' written notice (Clause [X]). This means the Distributor could lose exclusivity mid-term without losing the distribution right entirely. The Distributor should ensure its sales projections are realistic before accepting the Minimum Purchase Commitment level. The Principal should ensure the notice mechanics and cure period are clearly drafted."
+  (c) Flag whether the source document provides a cure period before conversion — if absent, flag as LAWYER_REVIEW and suggest inserting a 30-day cure period.
+  (d) Flag whether the conversion is automatic or requires written notice — automatic conversion without notice is commercially aggressive and should be flagged as LAWYER_REVIEW.
+
 IP LICENCE — Table: IP Licence Clauses (SG-MY):
 IP REGISTRY — MyIPO (FULL_AUTO reference):
 "All intellectual property rights licensed under this Agreement are subject to registration or registration rights with the Intellectual Property Corporation of Malaysia (MyIPO, myipo.gov.my):
@@ -1726,6 +1740,8 @@ FULL_AUTO (insert unconditionally — no deal profile input required):
 - Franchise s.24 renewal right (Franchise)
 - AIAC arbitration — AIAC Arbitration Rules 2023, Arbitration Act 2005 (Act 646) (unless MY-Q1 override)
 - Implied exclusivity obligation (Exclusive Distribution)
+- MYR conversion of minimum purchase with BNM rate suggestion (Exclusive Distribution)
+- Exclusivity performance trigger / conversion to non-exclusive flag (Exclusive Distribution)
 - SSM registration number format [202XXXXXXX (XXXXXXX-X)] in parties clause (all docs)
 - MyIPO IP registration representations (IP Licence)
 
