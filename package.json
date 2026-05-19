@@ -1,0 +1,16 @@
+{
+  "name": "qarta-intelligence-api",
+  "version": "1.0.0",
+  "description": "Qarta Intelligence — cross-border market entry backend",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "express": "^4.18.2",
+    "multer": "^2.1.1"
+  }
+}
