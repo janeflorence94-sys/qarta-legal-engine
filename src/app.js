@@ -1,9 +1,25 @@
 import express from 'express';
+import cors from 'cors';
 import assessmentRoutes from './routes/assessments.js';
 import legalJobRoutes from './routes/legalJobs.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
+
+const corsOptions = {
+  origin: [
+    'https://www.qartaintelligence.com',
+    'https://qartaintelligence.com',
+    'http://localhost:5173',
+  ],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight for all routes
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 
