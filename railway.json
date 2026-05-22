@@ -1,10 +1,22 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "nixpacksPlan": {
+      "phases": {
+        "setup": {
+          "nixPkgs": ["python311Full"]
+        },
+        "install": {
+          "cmds": ["pip install -r requirements.txt"]
+        }
+      },
+      "start": {
+        "cmd": "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+      }
+    }
   },
   "deploy": {
-    "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
