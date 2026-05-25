@@ -2,6 +2,7 @@ import json
 import os
 import smtplib
 import threading
+import traceback
 import uuid
 from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
@@ -156,8 +157,9 @@ def _run_pipeline(
         print(f"[job {job_id}] Complete.")
 
     except Exception as e:
-        _update_status(job_id, {"status": "error", "error": str(e)})
-        print(f"[job {job_id}] Error: {e}")
+        tb = traceback.format_exc()
+        print(f"[PIPELINE ERROR] job_id={job_id}\n{tb}")
+        _update_status(job_id, {"status": "error", "error": f"{str(e)}\n{tb}"})
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
