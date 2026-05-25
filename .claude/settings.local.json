@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc \"04_testing_protocol.docx\" -t plain)",
+      "Bash(pandoc \"05_test_contract_CN.docx\" -t plain)",
+      "Bash(python -c ' *)",
+      "Bash(ls /c/Python*)",
+      "Read(//c/Users/**)",
+      "Bash(where.exe python *)",
+      "Read(//usr/**)",
+      "Bash(py --version)",
+      "Bash(py3 --version)",
+      "Bash(pip --version)",
+      "Bash(pip3 --version)",
+      "Bash(conda --version)",
+      "Read(//c//**)"
+    ]
+  }
+}
