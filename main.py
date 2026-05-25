@@ -92,6 +92,17 @@ async def startup_event():
     print("=== END ENV CHECK ===")
 
 
+# ── Clause counter ────────────────────────────────────────────────────────────
+
+def _count_clauses(commentary_text: str) -> int:
+    """Count distinct clause rule IDs that fired, parsed from commentary output."""
+    if not commentary_text:
+        return 0
+    # Match patterns like STR-001, EMP-SG-014, RULE-2, PDPA-003, JV-007, etc.
+    ids = re.findall(r'\b(?:STR|EMP|RULE|PDPA|CPF|TAX|IP|NDA|JV|SHA)-[A-Z0-9\-]+', commentary_text)
+    return len(set(ids))  # distinct count only
+
+
 # ── Background worker ──────────────────────────────────────────────────────────
 
 def _run_pipeline(
@@ -116,6 +127,8 @@ def _run_pipeline(
             deal_profile=deal_profile or {},
         )
 
+        clause_count = _count_clauses(result.get("commentary", ""))
+
         build_outputs(
             clean_text=result["clean"],
             redline_text=result["redline"],
@@ -130,6 +143,7 @@ def _run_pipeline(
         _update_status(job_id, {
             "status": "complete",
             "files": _output_files(job_id),
+            "clause_count_adapted": clause_count,
             "metadata": {
                 "company":        company_name,
                 "corridor":       corridor,
