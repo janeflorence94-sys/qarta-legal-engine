@@ -1,16 +1,17 @@
 """
-docx_builder.py — Qarta Legal document formatter.
+docx_builder.py — Qarta Legal document formatter v3.
 
 Produces three lawyer-ready Word documents per adaptation job:
-  - clean.docx      : final adapted contract with deal profile + execution block
-  - redline.docx    : change-tracked diff view
+  - clean.docx      : final adapted contract
+  - redline.docx    : change-tracked diff (strikethrough red / underline green)
   - commentary.docx : clause-by-clause legal analysis
 
-Typography spec:
-  Body      — Georgia 10pt, #1A1A2E
-  UI labels — Arial 8–9pt, #4B4B6B
-  Metadata  — Courier New 8pt
-  Headings  — Arial Bold, amethyst (#7C3AED) clause numbers
+Typography:
+  Body            — Georgia 10pt  #1A1A2E
+  Labels/badges   — Arial
+  Metadata tags   — Courier New
+  Clause titles   — Georgia bold small-caps
+  Clause numbers  — Georgia bold amethyst #7C3AED
 """
 
 import re
@@ -23,7 +24,10 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
-# ── Document type display labels ───────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# Lookup tables
+# ══════════════════════════════════════════════════════════════════════════════
+
 DOC_TYPE_LABELS = {
     "nda":                                   "Non-Disclosure Agreement",
     "non_disclosure_agreement":              "Non-Disclosure Agreement",
@@ -64,41 +68,56 @@ CORRIDOR_GOV_LAW = {
     "CN_MY": "Malaysian Law",
 }
 
-# ── Colour palette ─────────────────────────────────────────────────────────────
-AMETHYST   = RGBColor(0x7C, 0x3A, 0xED)   # #7C3AED
-BODY_CLR   = RGBColor(0x1A, 0x1A, 0x2E)   # #1A1A2E
-SECONDARY  = RGBColor(0x4B, 0x4B, 0x6B)   # #4B4B6B
-ACTION_CLR = RGBColor(0xF5, 0x9E, 0x0B)   # #F59E0B amber
-LAWYER_CLR = RGBColor(0x93, 0x33, 0xEA)   # #9333EA purple
-NOTE_CLR   = RGBColor(0x26, 0x63, 0xEB)   # #2663EB blue
-RED        = RGBColor(0xC0, 0x00, 0x00)
-GREEN      = RGBColor(0x00, 0x7A, 0x3D)
+# ══════════════════════════════════════════════════════════════════════════════
+# Colour palette
+# ══════════════════════════════════════════════════════════════════════════════
+
+AMETHYST   = RGBColor(0x7C, 0x3A, 0xED)   # #7C3AED — brand accent
+BODY_CLR   = RGBColor(0x1A, 0x1A, 0x2E)   # #1A1A2E — primary body
+SECONDARY  = RGBColor(0x6B, 0x72, 0x80)   # #6B7280 — grey labels
+BLUE_GREY  = RGBColor(0x37, 0x51, 0x6F)   # #37516F — reason text
 WHITE      = RGBColor(0xFF, 0xFF, 0xFF)
+# Flag colours
+ACTION_CLR = RGBColor(0xF5, 0x9E, 0x0B)   # #F59E0B amber border
+LAWYER_CLR = RGBColor(0x93, 0x33, 0xEA)   # #9333EA purple border
+NOTE_CLR   = RGBColor(0x0E, 0xA5, 0xE9)   # #0EA5E9 blue border
+# Diff colours
+INS_CLR    = RGBColor(0x05, 0x96, 0x69)   # #059669 green — insertions
+DEL_CLR    = RGBColor(0xDC, 0x26, 0x26)   # #DC2626 red  — deletions
 
-# Hex strings for XML (no #)
-AMETHYST_HEX   = "7C3AED"
-ACTION_BG_HEX  = "FFF3E0"
-ACTION_BDR_HEX = "F59E0B"
-LAWYER_BG_HEX  = "FDF2F8"
-LAWYER_BDR_HEX = "9333EA"
-NOTE_BG_HEX    = "EFF6FF"
-NOTE_BDR_HEX   = "2663EB"
-COVER_BG_HEX   = "F5F3FF"   # near-white amethyst tint for cover block
-TABLE_HDR_HEX  = "EDE9FE"   # light purple for table header rows
-DIVIDER_HEX    = "DDD6FE"   # muted amethyst for divider lines
+# Hex strings (no #) for XML attributes
+AMETHYST_HX   = "7C3AED"
+ACTION_BG_HX  = "FFF3E0"
+ACTION_BD_HX  = "F59E0B"
+LAWYER_BG_HX  = "FDF2F8"
+LAWYER_BD_HX  = "9333EA"
+NOTE_BG_HX    = "F0F9FF"
+NOTE_BD_HX    = "0EA5E9"
+COVER_BG_HX   = "F5F3FF"   # near-white amethyst tint
+TABLE_HDR_HX  = "F3F0FF"   # light purple table header
+GREY_BD_HX    = "E5E7EB"   # light grey for header/footer borders
+DIVIDER_HX    = "DDD6FE"   # muted amethyst for clause dividers
 
-# ── Typography ─────────────────────────────────────────────────────────────────
-FONT_BODY  = "Georgia"
-FONT_UI    = "Arial"
-FONT_MONO  = "Courier New"
-SZ_BODY    = Pt(10)
-SZ_SMALL   = Pt(8)
-SZ_LABEL   = Pt(9)
-SZ_TITLE   = Pt(14)
-SZ_H1      = Pt(11)
-SZ_H2      = Pt(10)
+# ══════════════════════════════════════════════════════════════════════════════
+# Typography
+# ══════════════════════════════════════════════════════════════════════════════
 
-# ── Regex ──────────────────────────────────────────────────────────────────────
+FONT_BODY = "Georgia"
+FONT_UI   = "Arial"
+FONT_MONO = "Courier New"
+
+SZ_BODY   = Pt(10)
+SZ_SMALL  = Pt(8)
+SZ_LABEL  = Pt(9)
+SZ_TITLE  = Pt(20)
+SZ_BRAND  = Pt(9)
+SZ_H1     = Pt(11)
+SZ_H2     = Pt(10)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Regex
+# ══════════════════════════════════════════════════════════════════════════════
+
 RE_PLACEHOLDER   = re.compile(r'(\[[A-Z][A-Z0-9 _]+:[^\]]{1,120}\])')
 RE_TOP_CLAUSE    = re.compile(r'^(\d+)\.\s{1,4}([A-Z].*)$')
 RE_SUB_CLAUSE    = re.compile(r'^(\d+\.\d+)\s{1,4}(\S.*)$')
@@ -117,17 +136,19 @@ FIELD_LABELS = ('Original:', 'Change:', 'Reason:', 'Action required:')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Low-level XML / formatting helpers
+# Low-level XML / run helpers
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _fmt(run, font=FONT_BODY, bold=False, italic=False, strike=False,
-         color=None, size=None):
-    run.font.name   = font
-    run.font.bold   = bold
-    run.font.italic = italic
-    run.font.strike = strike
-    run.font.size   = size or SZ_BODY
-    run.font.color.rgb = color or BODY_CLR
+         underline=False, small_caps=False, color=None, size=None):
+    run.font.name       = font
+    run.font.bold       = bold
+    run.font.italic     = italic
+    run.font.strike     = strike
+    run.font.underline  = underline
+    run.font.small_caps = small_caps
+    run.font.size       = size or SZ_BODY
+    run.font.color.rgb  = color or BODY_CLR
 
 
 def _para_spacing(para, before=0, after=80):
@@ -137,62 +158,21 @@ def _para_spacing(para, before=0, after=80):
     para._p.get_or_add_pPr().append(sp)
 
 
-def _set_para_indent(para, left_twips=0):
+def _set_indent(para, left_twips=0, hanging_twips=0):
     ind = OxmlElement('w:ind')
-    ind.set(qn('w:left'), str(left_twips))
+    ind.set(qn('w:left'),    str(left_twips))
+    if hanging_twips:
+        ind.set(qn('w:hanging'), str(hanging_twips))
     para._p.get_or_add_pPr().append(ind)
 
 
-def _add_left_border(para, bdr_hex, bg_hex=None, thickness='24'):
-    """Left-accent flag box — thick left border only, optional background."""
+def _set_para_bg(para, fill_hex):
     pPr = para._p.get_or_add_pPr()
-    bdr = OxmlElement('w:pBdr')
-    left = OxmlElement('w:left')
-    left.set(qn('w:val'),   'single')
-    left.set(qn('w:sz'),    thickness)
-    left.set(qn('w:space'), '8')
-    left.set(qn('w:color'), bdr_hex)
-    bdr.append(left)
-    pPr.append(bdr)
-    if bg_hex:
-        shd = OxmlElement('w:shd')
-        shd.set(qn('w:val'),   'clear')
-        shd.set(qn('w:color'), 'auto')
-        shd.set(qn('w:fill'),  bg_hex)
-        pPr.append(shd)
-
-
-def _add_bottom_border(para, color_hex, thickness='18'):
-    """Bottom border only — used as cover-header separator."""
-    pPr = para._p.get_or_add_pPr()
-    bdr = OxmlElement('w:pBdr')
-    bot = OxmlElement('w:bottom')
-    bot.set(qn('w:val'),   'single')
-    bot.set(qn('w:sz'),    thickness)
-    bot.set(qn('w:space'), '4')
-    bot.set(qn('w:color'), color_hex)
-    bdr.append(bot)
-    pPr.append(bdr)
-
-
-def _add_full_border(para, color_hex, bg_hex=None):
-    """Full paragraph border box."""
-    pPr = para._p.get_or_add_pPr()
-    bdr = OxmlElement('w:pBdr')
-    for side in ('top', 'left', 'bottom', 'right'):
-        el = OxmlElement(f'w:{side}')
-        el.set(qn('w:val'),   'single')
-        el.set(qn('w:sz'),    '6')
-        el.set(qn('w:space'), '4')
-        el.set(qn('w:color'), color_hex)
-        bdr.append(el)
-    pPr.append(bdr)
-    if bg_hex:
-        shd = OxmlElement('w:shd')
-        shd.set(qn('w:val'),   'clear')
-        shd.set(qn('w:color'), 'auto')
-        shd.set(qn('w:fill'),  bg_hex)
-        pPr.append(shd)
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:val'),   'clear')
+    shd.set(qn('w:color'), 'auto')
+    shd.set(qn('w:fill'),  fill_hex)
+    pPr.append(shd)
 
 
 def _set_cell_bg(cell, fill_hex):
@@ -205,13 +185,49 @@ def _set_cell_bg(cell, fill_hex):
     tcPr.append(shd)
 
 
-def _run_badge(para, text, bg_hex=AMETHYST_HEX, fg=WHITE):
-    """Inline badge — colored background on run (e.g. 'AI-ASSISTED DRAFT')."""
+def _set_cell_no_border(cell):
+    """Remove all borders from a table cell (for layout tables)."""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    tcBdr = OxmlElement('w:tcBdr')
+    for side in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
+        el = OxmlElement(f'w:{side}')
+        el.set(qn('w:val'),   'none')
+        el.set(qn('w:sz'),    '0')
+        el.set(qn('w:space'), '0')
+        el.set(qn('w:color'), 'auto')
+        tcBdr.append(el)
+    tcPr.append(tcBdr)
+
+
+def _add_para_border(para, sides, color_hex, thickness='4', space='4'):
+    """Add borders to specified sides of a paragraph."""
+    pPr = para._p.get_or_add_pPr()
+    bdr = OxmlElement('w:pBdr')
+    for side in sides:
+        el = OxmlElement(f'w:{side}')
+        el.set(qn('w:val'),   'single')
+        el.set(qn('w:sz'),    thickness)
+        el.set(qn('w:space'), space)
+        el.set(qn('w:color'), color_hex)
+        bdr.append(el)
+    pPr.append(bdr)
+
+
+def _add_left_border(para, bdr_hex, bg_hex=None, thickness='24'):
+    """Left-accent flag box — thick left border, optional background fill."""
+    _add_para_border(para, ['left'], bdr_hex, thickness=thickness, space='8')
+    if bg_hex:
+        _set_para_bg(para, bg_hex)
+
+
+def _run_badge(para, text, bg_hex=AMETHYST_HX, fg_color=None):
+    """Inline colored-background badge run."""
     run = para.add_run(f"  {text}  ")
     run.font.name  = FONT_UI
     run.font.size  = SZ_SMALL
     run.font.bold  = True
-    run.font.color.rgb = fg
+    run.font.color.rgb = fg_color or WHITE
     rPr = run._r.get_or_add_rPr()
     shd = OxmlElement('w:shd')
     shd.set(qn('w:val'),   'clear')
@@ -222,7 +238,6 @@ def _run_badge(para, text, bg_hex=AMETHYST_HEX, fg=WHITE):
 
 
 def _add_page_number(para):
-    """Append a PAGE field into an existing paragraph."""
     run = para.add_run()
     for tag, val in [('begin', None), ('instrText', ' PAGE '), ('end', None)]:
         if tag == 'instrText':
@@ -235,19 +250,22 @@ def _add_page_number(para):
         run._r.append(el)
 
 
-def _horizontal_rule(doc, color_hex=DIVIDER_HEX):
-    """Add a thin full-width horizontal rule paragraph."""
+def _new_doc() -> Document:
+    doc = Document()
+    sect = doc.sections[0]
+    sect.top_margin    = Inches(0.9)
+    sect.bottom_margin = Inches(0.9)
+    sect.left_margin   = Inches(1.2)
+    sect.right_margin  = Inches(1.2)
+    doc.styles['Normal'].font.name = FONT_BODY
+    doc.styles['Normal'].font.size = SZ_BODY
+    return doc, sect
+
+
+def _horizontal_rule(doc, color_hex=DIVIDER_HX):
     p = doc.add_paragraph()
     _para_spacing(p, before=60, after=60)
-    pPr = p._p.get_or_add_pPr()
-    bdr = OxmlElement('w:pBdr')
-    bot = OxmlElement('w:bottom')
-    bot.set(qn('w:val'),   'single')
-    bot.set(qn('w:sz'),    '4')
-    bot.set(qn('w:space'), '1')
-    bot.set(qn('w:color'), color_hex)
-    bdr.append(bot)
-    pPr.append(bdr)
+    _add_para_border(p, ['bottom'], color_hex, thickness='4', space='1')
     return p
 
 
@@ -257,154 +275,208 @@ def _horizontal_rule(doc, color_hex=DIVIDER_HEX):
 
 def _setup_header_footer(section, doc_type_label: str, corridor_label: str):
     """
-    Page header: 'QARTA LEGAL · {doc_type} · {corridor}'  (left)
-                 'CONFIDENTIAL — FOR LAWYER REVIEW'         (right, bold red)
-    Page footer: disclaimer italic (left) | page number (right)
+    Header  left : "QARTA LEGAL · {doc_type} · {corridor}"   grey
+    Header  right: "CONFIDENTIAL — FOR LAWYER REVIEW"          amethyst bold
+            + thin grey bottom border
+
+    Footer  left : disclaimer italic grey
+    Footer  right: page number
+            + thin grey top border
     """
-    # ── Header ────────────────────────────────────────────────────────────────
-    header = section.header
-    hp = header.paragraphs[0]
+    # ── PAGE HEADER ────────────────────────────────────────────────────────────
+    hp = section.header.paragraphs[0]
     hp.clear()
 
-    # Tab stop at right edge of text area (6" = 8640 twips)
+    # Grey bottom border on header paragraph
+    _add_para_border(hp, ['bottom'], GREY_BD_HX, thickness='4', space='4')
+
+    # Right-edge tab stop (6 inches = 8640 twips)
     pPr = hp._p.get_or_add_pPr()
-    tabs_el = OxmlElement('w:tabs')
-    tab_r = OxmlElement('w:tab')
-    tab_r.set(qn('w:val'), 'right')
-    tab_r.set(qn('w:pos'), '8640')
-    tabs_el.append(tab_r)
-    pPr.append(tabs_el)
+    tabs = OxmlElement('w:tabs')
+    tr = OxmlElement('w:tab')
+    tr.set(qn('w:val'), 'right')
+    tr.set(qn('w:pos'), '8640')
+    tabs.append(tr)
+    pPr.append(tabs)
 
-    left_run = hp.add_run(f"QARTA LEGAL  ·  {doc_type_label}  ·  {corridor_label}")
-    left_run.font.name  = FONT_UI
-    left_run.font.size  = SZ_SMALL
-    left_run.font.color.rgb = SECONDARY
+    rl = hp.add_run(f"QARTA LEGAL  ·  {doc_type_label}  ·  {corridor_label}")
+    rl.font.name  = FONT_UI
+    rl.font.size  = SZ_SMALL
+    rl.font.color.rgb = SECONDARY
 
-    tab_run = hp.add_run('\t')
+    hp.add_run('\t')
 
-    right_run = hp.add_run("CONFIDENTIAL — FOR LAWYER REVIEW")
-    right_run.font.name  = FONT_UI
-    right_run.font.size  = SZ_SMALL
-    right_run.font.bold  = True
-    right_run.font.color.rgb = RED
+    rr = hp.add_run("CONFIDENTIAL — FOR LAWYER REVIEW")
+    rr.font.name  = FONT_UI
+    rr.font.size  = SZ_SMALL
+    rr.font.bold  = True
+    rr.font.color.rgb = AMETHYST
 
-    # ── Footer ────────────────────────────────────────────────────────────────
-    footer = section.footer
-    fp = footer.paragraphs[0]
+    # ── PAGE FOOTER ────────────────────────────────────────────────────────────
+    fp = section.footer.paragraphs[0]
     fp.clear()
 
-    pPr2 = fp._p.get_or_add_pPr()
-    tabs_el2 = OxmlElement('w:tabs')
-    tab_r2 = OxmlElement('w:tab')
-    tab_r2.set(qn('w:val'), 'right')
-    tab_r2.set(qn('w:pos'), '8640')
-    tabs_el2.append(tab_r2)
-    pPr2.append(tabs_el2)
+    # Grey top border on footer paragraph
+    _add_para_border(fp, ['top'], GREY_BD_HX, thickness='4', space='4')
 
-    disc_run = fp.add_run(
+    pPr2 = fp._p.get_or_add_pPr()
+    tabs2 = OxmlElement('w:tabs')
+    tr2 = OxmlElement('w:tab')
+    tr2.set(qn('w:val'), 'right')
+    tr2.set(qn('w:pos'), '8640')
+    tabs2.append(tr2)
+    pPr2.append(tabs2)
+
+    rd = fp.add_run(
         "AI-assisted adaptation. Not legal advice. Requires attorney review before execution."
     )
-    disc_run.font.name   = FONT_UI
-    disc_run.font.size   = SZ_SMALL
-    disc_run.font.italic = True
-    disc_run.font.color.rgb = SECONDARY
+    rd.font.name   = FONT_UI
+    rd.font.size   = SZ_SMALL
+    rd.font.italic = True
+    rd.font.color.rgb = SECONDARY
 
     fp.add_run('\t')
     _add_page_number(fp)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Cover block + deal profile table
+# Cover block
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _add_cover_block(doc, doc_type_label: str, corridor_label: str,
-                     variant: str, date_str: str):
+                     gov_law: str, variant: str, date_str: str):
     """
-    Cover header block at the top of the document body:
-      Line 1: document title (bold, large)
-      Line 2: corridor tag · variant label  +  AI-ASSISTED DRAFT badge
-      Line 3: date — separated from body by amethyst bottom border
+    Two-column layout table (no borders):
+      LEFT  col: QARTA LEGAL (small caps amethyst) / title (Georgia 20pt bold) /
+                 corridor + governing law (Arial 9pt grey)
+      RIGHT col: AI-ASSISTED DRAFT badge / "For lawyer review..." italic /
+                 preparation date Courier
+    Separated from body by a 2pt amethyst bottom border.
     """
-    # Title paragraph
-    p_title = doc.add_paragraph()
-    _para_spacing(p_title, before=0, after=40)
-    pPr = p_title._p.get_or_add_pPr()
-    shd = OxmlElement('w:shd')
-    shd.set(qn('w:val'),   'clear')
-    shd.set(qn('w:color'), 'auto')
-    shd.set(qn('w:fill'),  COVER_BG_HEX)
-    pPr.append(shd)
+    tbl = doc.add_table(rows=1, cols=2)
+    # Remove all table borders via tblPr
+    tbl_el = tbl._tbl
+    tbl_pr = tbl_el.find(qn('w:tblPr'))
+    if tbl_pr is None:
+        tbl_pr = OxmlElement('w:tblPr')
+        tbl_el.insert(0, tbl_pr)
+    tbl_bdr = OxmlElement('w:tblBorders')
+    for side in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
+        el = OxmlElement(f'w:{side}')
+        el.set(qn('w:val'),   'none')
+        el.set(qn('w:sz'),    '0')
+        el.set(qn('w:space'), '0')
+        el.set(qn('w:color'), 'auto')
+        tbl_bdr.append(el)
+    tbl_pr.append(tbl_bdr)
 
-    r_title = p_title.add_run(doc_type_label.upper())
-    r_title.font.name  = FONT_UI
+    tbl.columns[0].width = Inches(3.6)
+    tbl.columns[1].width = Inches(2.7)
+
+    left_cell  = tbl.rows[0].cells[0]
+    right_cell = tbl.rows[0].cells[1]
+    _set_cell_no_border(left_cell)
+    _set_cell_no_border(right_cell)
+    _set_cell_bg(left_cell,  COVER_BG_HX)
+    _set_cell_bg(right_cell, COVER_BG_HX)
+
+    # ── LEFT CELL ──────────────────────────────────────────────────────────────
+    # "QARTA LEGAL" small-caps amethyst
+    p_brand = left_cell.paragraphs[0]
+    p_brand.clear()
+    _para_spacing(p_brand, before=80, after=40)
+    r_brand = p_brand.add_run("QARTA LEGAL")
+    r_brand.font.name       = FONT_UI
+    r_brand.font.size       = SZ_BRAND
+    r_brand.font.bold       = True
+    r_brand.font.small_caps = True
+    r_brand.font.color.rgb  = AMETHYST
+
+    # Document title Georgia 20pt bold dark
+    p_title = left_cell.add_paragraph()
+    _para_spacing(p_title, before=20, after=40)
+    r_title = p_title.add_run(doc_type_label)
+    r_title.font.name  = FONT_BODY
     r_title.font.size  = SZ_TITLE
     r_title.font.bold  = True
-    r_title.font.color.rgb = AMETHYST
+    r_title.font.color.rgb = BODY_CLR
 
-    # Subtitle: corridor + variant + badge
-    p_sub = doc.add_paragraph()
-    _para_spacing(p_sub, before=0, after=40)
-    pPr2 = p_sub._p.get_or_add_pPr()
-    shd2 = OxmlElement('w:shd')
-    shd2.set(qn('w:val'),   'clear')
-    shd2.set(qn('w:color'), 'auto')
-    shd2.set(qn('w:fill'),  COVER_BG_HEX)
-    pPr2.append(shd2)
+    # Corridor + governing law subtitle — Arial 9pt grey
+    p_sub = left_cell.add_paragraph()
+    _para_spacing(p_sub, before=0, after=80)
+    r_sub = p_sub.add_run(f"{corridor_label}  ·  Governed by {gov_law}")
+    r_sub.font.name  = FONT_UI
+    r_sub.font.size  = SZ_LABEL
+    r_sub.font.color.rgb = SECONDARY
 
-    r_corr = p_sub.add_run(f"{corridor_label}  ·  {variant}")
-    r_corr.font.name  = FONT_UI
-    r_corr.font.size  = SZ_LABEL
-    r_corr.font.color.rgb = SECONDARY
+    # ── RIGHT CELL ─────────────────────────────────────────────────────────────
+    right_cell.paragraphs[0].clear()
 
-    _run_badge(p_sub, "AI-ASSISTED DRAFT")
+    # Spacer paragraph to push content down visually
+    p_space = right_cell.paragraphs[0]
+    _para_spacing(p_space, before=80, after=40)
+    p_space.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
-    # Date line — with amethyst bottom border as separator
-    p_date = doc.add_paragraph()
-    _para_spacing(p_date, before=40, after=160)
-    pPr3 = p_date._p.get_or_add_pPr()
-    shd3 = OxmlElement('w:shd')
-    shd3.set(qn('w:val'),   'clear')
-    shd3.set(qn('w:color'), 'auto')
-    shd3.set(qn('w:fill'),  COVER_BG_HEX)
-    pPr3.append(shd3)
-    _add_bottom_border(p_date, AMETHYST_HEX, thickness='12')
+    # AI-ASSISTED DRAFT badge
+    _run_badge(p_space, "AI-ASSISTED DRAFT")
 
+    # "For lawyer review before execution" italic
+    p_disc = right_cell.add_paragraph()
+    _para_spacing(p_disc, before=20, after=20)
+    p_disc.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    r_disc = p_disc.add_run("For lawyer review before execution")
+    r_disc.font.name   = FONT_UI
+    r_disc.font.size   = SZ_SMALL
+    r_disc.font.italic = True
+    r_disc.font.color.rgb = SECONDARY
+
+    # Preparation date Courier
+    p_date = right_cell.add_paragraph()
+    _para_spacing(p_date, before=0, after=80)
+    p_date.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     r_date = p_date.add_run(f"Prepared: {date_str}")
     r_date.font.name  = FONT_MONO
     r_date.font.size  = SZ_SMALL
     r_date.font.color.rgb = SECONDARY
 
+    # Separator paragraph — 2pt amethyst bottom border
+    p_sep = doc.add_paragraph()
+    _para_spacing(p_sep, before=0, after=160)
+    _add_para_border(p_sep, ['bottom'], AMETHYST_HX, thickness='16', space='4')
+    _set_para_bg(p_sep, COVER_BG_HX)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Deal profile table
+# ══════════════════════════════════════════════════════════════════════════════
 
 def _add_deal_profile_table(doc, corridor: str, doc_type: str,
                              company_name: str, date_str: str):
     """
-    Two-column deal profile table:
-      Field            Value
-      ─────────────────────────────────
-      Corridor         China → Singapore
-      Document type    Non-Disclosure Agreement
-      Party / Entity   [company_name]
-      Governing law    Singapore Law
-      Adaptation date  21 May 2026
+    Two-column table: label (bold grey Arial) / value (Georgia).
+    Header row with light purple background.
+    Employer entity value shown amber italic = user input required.
     """
     rows_data = [
-        ("Corridor",         CORRIDOR_LABELS.get(corridor.upper(), corridor)),
-        ("Document type",    DOC_TYPE_LABELS.get(doc_type.lower(), doc_type)),
-        ("Party / Entity",   company_name or "[PARTY NAME]"),
-        ("Governing law",    CORRIDOR_GOV_LAW.get(corridor.upper(), "—")),
-        ("Adaptation date",  date_str),
+        ("Corridor",         CORRIDOR_LABELS.get(corridor.upper(), corridor), 'normal'),
+        ("Document type",    DOC_TYPE_LABELS.get(doc_type.lower(),
+                             doc_type.replace('_', ' ').title()),            'normal'),
+        ("Employer entity",  company_name or "[PARTY NAME — USER INPUT]",    'amber'),
+        ("Governing law",    CORRIDOR_GOV_LAW.get(corridor.upper(), "—"),    'normal'),
+        ("Adaptation date",  date_str,                                        'mono'),
     ]
 
     tbl = doc.add_table(rows=1, cols=2)
     tbl.style = 'Table Grid'
+    # approximate widths
     tbl.columns[0].width = Inches(1.8)
-    tbl.columns[1].width = Inches(4.2)
+    tbl.columns[1].width = Inches(4.5)
 
     # Header row
-    hdr_cells = tbl.rows[0].cells
-    _set_cell_bg(hdr_cells[0], TABLE_HDR_HEX)
-    _set_cell_bg(hdr_cells[1], TABLE_HDR_HEX)
-    for cell, txt in zip(hdr_cells, ["Field", "Value"]):
+    hdr = tbl.rows[0].cells
+    _set_cell_bg(hdr[0], TABLE_HDR_HX)
+    _set_cell_bg(hdr[1], TABLE_HDR_HX)
+    for cell, txt in zip(hdr, ["Field", "Value"]):
         p = cell.paragraphs[0]
         p.clear()
         r = p.add_run(txt)
@@ -413,25 +485,35 @@ def _add_deal_profile_table(doc, corridor: str, doc_type: str,
         r.font.bold  = True
         r.font.color.rgb = AMETHYST
 
-    for field, value in rows_data:
+    for field, value, style in rows_data:
         row = tbl.add_row().cells
-        p_field = row[0].paragraphs[0]
-        p_field.clear()
-        rf = p_field.add_run(field)
+        # Label cell
+        pf = row[0].paragraphs[0]
+        pf.clear()
+        rf = pf.add_run(field)
         rf.font.name  = FONT_UI
         rf.font.size  = SZ_LABEL
         rf.font.bold  = True
         rf.font.color.rgb = SECONDARY
+        # Value cell
+        pv = row[1].paragraphs[0]
+        pv.clear()
+        rv = pv.add_run(value)
+        if style == 'amber':
+            rv.font.name   = FONT_BODY
+            rv.font.size   = SZ_BODY
+            rv.font.italic = True
+            rv.font.color.rgb = ACTION_CLR
+        elif style == 'mono':
+            rv.font.name  = FONT_MONO
+            rv.font.size  = SZ_BODY
+            rv.font.color.rgb = BODY_CLR
+        else:
+            rv.font.name  = FONT_BODY
+            rv.font.size  = SZ_BODY
+            rv.font.color.rgb = BODY_CLR
 
-        p_val = row[1].paragraphs[0]
-        p_val.clear()
-        rv = p_val.add_run(value)
-        rv.font.name  = FONT_BODY
-        rv.font.size  = SZ_BODY
-        rv.font.color.rgb = BODY_CLR
-
-    # Spacing after table
-    doc.add_paragraph()
+    doc.add_paragraph()   # breathing room after table
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -439,40 +521,33 @@ def _add_deal_profile_table(doc, corridor: str, doc_type: str,
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _add_execution_block(doc):
-    """Two-column signature table at end of clean document."""
     _horizontal_rule(doc)
 
-    p_hdr = doc.add_paragraph()
-    _para_spacing(p_hdr, before=120, after=80)
-    r = p_hdr.add_run("EXECUTION")
-    r.font.name  = FONT_UI
-    r.font.size  = SZ_H1
-    r.font.bold  = True
-    r.font.color.rgb = AMETHYST
+    p_h = doc.add_paragraph()
+    _para_spacing(p_h, before=120, after=80)
+    r_h = p_h.add_run("EXECUTION")
+    r_h.font.name       = FONT_UI
+    r_h.font.size       = SZ_H1
+    r_h.font.bold       = True
+    r_h.font.small_caps = True
+    r_h.font.color.rgb  = AMETHYST
 
+    parties = ["Employer / Party A", "Employee / Party B"]
     tbl = doc.add_table(rows=1, cols=2)
     tbl.style = 'Table Grid'
 
-    for col_idx, party in enumerate(["PARTY A (Transferor / Employer / Licensor)",
-                                      "PARTY B (Transferee / Employee / Licensee)"]):
-        cell = tbl.rows[0].cells[col_idx]
-        _set_cell_bg(cell, TABLE_HDR_HEX)
+    for i, party in enumerate(parties):
+        cell = tbl.rows[0].cells[i]
+        _set_cell_bg(cell, TABLE_HDR_HX)
         p = cell.paragraphs[0]
         p.clear()
-        r_hdr = p.add_run(party)
-        r_hdr.font.name  = FONT_UI
-        r_hdr.font.size  = SZ_LABEL
-        r_hdr.font.bold  = True
-        r_hdr.font.color.rgb = AMETHYST
+        r = p.add_run(party)
+        r.font.name  = FONT_UI
+        r.font.size  = SZ_LABEL
+        r.font.bold  = True
+        r.font.color.rgb = AMETHYST
 
-    fields = [
-        ("Signature", "_" * 38),
-        ("Name",      "_" * 38),
-        ("Title",     "_" * 38),
-        ("Date",      "_" * 38),
-    ]
-
-    for label, blank in fields:
+    for label in ("Signature", "Name", "Title", "Date"):
         row = tbl.add_row().cells
         for cell in row:
             p = cell.paragraphs[0]
@@ -483,7 +558,7 @@ def _add_execution_block(doc):
             rl.font.size  = SZ_LABEL
             rl.font.bold  = True
             rl.font.color.rgb = SECONDARY
-            rb = p.add_run(blank)
+            rb = p.add_run("_" * 36)
             rb.font.name  = FONT_BODY
             rb.font.size  = SZ_BODY
             rb.font.color.rgb = BODY_CLR
@@ -494,54 +569,47 @@ def _add_execution_block(doc):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _clause_parts(line: str):
-    """
-    Return (level, num_str, rest_str) if line is a clause heading, else (0,'','').
-    E.g. '1. DEFINITIONS'   → (1, '1.', 'DEFINITIONS')
-         '1.1 Scope'        → (2, '1.1', 'Scope')
-         '1.1.1 Meaning'    → (3, '1.1.1', 'Meaning')
-    """
+    """Return (level, num_str, title_str) or (0,'','')."""
     m = RE_SUB_SUB.match(line)
-    if m:
-        return 3, m.group(1), m.group(2)
+    if m: return 3, m.group(1), m.group(2)
     m = RE_SUB_CLAUSE.match(line)
-    if m:
-        return 2, m.group(1), m.group(2)
+    if m: return 2, m.group(1), m.group(2)
     m = RE_TOP_CLAUSE.match(line)
-    if m:
-        return 1, m.group(1) + '.', m.group(2)
+    if m: return 1, m.group(1) + '.', m.group(2)
     return 0, '', ''
 
 
-def _add_clause_heading(doc, num_str: str, text_str: str, level: int):
+def _add_clause_heading(doc, num_str: str, title_str: str, level: int):
     """
-    Render clause heading with amethyst number + body-color text.
-    Level 1: bold, larger spacing, followed by thin divider.
-    Level 2: semi-bold, indented.
-    Level 3: italic, more indented.
+    Amethyst Georgia bold clause number + dark small-caps Georgia title.
+    Level 1: spacing + thin amethyst divider after.
+    Level 2/3: indented with hanging indent.
     """
     para = doc.add_paragraph()
-    indent_map = {1: 0, 2: 360, 3: 720}   # twips
-    _para_spacing(para,
-                  before=200 if level == 1 else 100 if level == 2 else 60,
-                  after=60)
-    _set_para_indent(para, indent_map.get(level, 0))
+    sp_before = {1: 200, 2: 100, 3: 60}
+    _para_spacing(para, before=sp_before.get(level, 100), after=60)
 
-    # Amethyst clause number
+    # Hanging indent for sub-clauses: left=360 twips, hanging=360 twips
+    if level == 2:
+        _set_indent(para, left_twips=360, hanging_twips=360)
+    elif level == 3:
+        _set_indent(para, left_twips=720, hanging_twips=360)
+
+    # Clause number — amethyst Georgia bold
     r_num = para.add_run(num_str + "  ")
-    r_num.font.name  = FONT_UI
+    r_num.font.name  = FONT_BODY
     r_num.font.bold  = True
     r_num.font.size  = SZ_H1 if level == 1 else SZ_H2
     r_num.font.color.rgb = AMETHYST
 
-    # Clause title text
-    r_txt = para.add_run(text_str)
-    r_txt.font.name   = FONT_UI
-    r_txt.font.bold   = (level == 1)
-    r_txt.font.italic = (level == 3)
-    r_txt.font.size   = SZ_H1 if level == 1 else SZ_H2
-    r_txt.font.color.rgb = BODY_CLR
+    # Clause title — dark Georgia bold small-caps
+    r_txt = para.add_run(title_str)
+    r_txt.font.name       = FONT_BODY
+    r_txt.font.bold       = (level <= 2)
+    r_txt.font.small_caps = (level == 1)
+    r_txt.font.size       = SZ_H1 if level == 1 else SZ_H2
+    r_txt.font.color.rgb  = BODY_CLR
 
-    # Thin divider after top-level clause heading
     if level == 1:
         _horizontal_rule(doc)
 
@@ -552,34 +620,25 @@ def _add_clause_heading(doc, num_str: str, text_str: str, level: int):
 # Flag box helpers
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _flag_style(flag_type: str):
-    """Return (bdr_hex, bg_hex, label_color) for a flag severity."""
-    if flag_type == 'action':
-        return ACTION_BDR_HEX, ACTION_BG_HEX, ACTION_CLR
-    if flag_type == 'lawyer':
-        return LAWYER_BDR_HEX, LAWYER_BG_HEX, LAWYER_CLR
-    if flag_type == 'note':
-        return NOTE_BDR_HEX, NOTE_BG_HEX, NOTE_CLR
-    return AMETHYST_HEX, "F5F3FF", AMETHYST
-
-
 def _detect_flag(line: str):
-    """Return 'action', 'lawyer', 'note', or None."""
-    if RE_ACTION_FLAG.match(line):
-        return 'action'
-    if RE_LAWYER_FLAG.match(line):
-        return 'lawyer'
-    if RE_NOTE_FLAG.match(line):
-        return 'note'
+    if RE_ACTION_FLAG.match(line): return 'action'
+    if RE_LAWYER_FLAG.match(line): return 'lawyer'
+    if RE_NOTE_FLAG.match(line):   return 'note'
     return None
 
 
-def _add_flag_para(doc, text: str, flag_type: str, is_label: bool = False):
-    """Add one paragraph styled as a left-border flag box line."""
-    bdr_hex, bg_hex, clr = _flag_style(flag_type)
+_FLAG_STYLES = {
+    'action': (ACTION_BD_HX, ACTION_BG_HX, ACTION_CLR),
+    'lawyer': (LAWYER_BD_HX, LAWYER_BG_HX, LAWYER_CLR),
+    'note':   (NOTE_BD_HX,   NOTE_BG_HX,   NOTE_CLR),
+}
+
+
+def _add_flag_para(doc, text: str, flag_type: str, is_label=False):
+    bdr_hex, bg_hex, clr = _FLAG_STYLES.get(flag_type, (AMETHYST_HX, COVER_BG_HX, AMETHYST))
     p = doc.add_paragraph()
     _para_spacing(p, before=20 if is_label else 0, after=20)
-    _set_para_indent(p, 180)
+    _set_indent(p, left_twips=180)
     _add_left_border(p, bdr_hex, bg_hex=bg_hex)
     clean = text.lstrip('┌└│║⚠ℹ* ').strip()
     r = p.add_run(clean)
@@ -591,11 +650,11 @@ def _add_flag_para(doc, text: str, flag_type: str, is_label: bool = False):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CLEAN document builder
+# CLEAN document
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _para_with_placeholders(doc, line: str):
-    """Body paragraph — [PLACEHOLDER: ...] rendered bold amber."""
+    """Body paragraph — [PLACEHOLDER:...] rendered bold amber Courier."""
     para = doc.add_paragraph()
     _para_spacing(para, after=80)
     for part in RE_PLACEHOLDER.split(line):
@@ -614,24 +673,14 @@ def _para_with_placeholders(doc, line: str):
 
 def _build_clean(text: str, company_name: str, doc_type: str,
                  corridor: str, date_str: str) -> Document:
-    doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(), doc_type.replace('_', ' ').title())
+    doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(),
+                     doc_type.replace('_', ' ').title())
     corridor_label = CORRIDOR_LABELS.get(corridor.upper(), corridor)
+    gov_law        = CORRIDOR_GOV_LAW.get(corridor.upper(), "—")
 
-    doc = Document()
-    sect = doc.sections[0]
-    sect.top_margin    = Inches(1.0)
-    sect.bottom_margin = Inches(1.0)
-    sect.left_margin   = Inches(1.25)
-    sect.right_margin  = Inches(1.25)
-
+    doc, sect = _new_doc()
     _setup_header_footer(sect, doc_type_label, corridor_label)
-
-    # Normal style defaults
-    doc.styles['Normal'].font.name = FONT_BODY
-    doc.styles['Normal'].font.size = SZ_BODY
-
-    # Cover block + deal profile
-    _add_cover_block(doc, doc_type_label, corridor_label, "Clean Version", date_str)
+    _add_cover_block(doc, doc_type_label, corridor_label, gov_law, "Clean Version", date_str)
     _add_deal_profile_table(doc, corridor, doc_type, company_name, date_str)
 
     flag_type = None
@@ -639,87 +688,6 @@ def _build_clean(text: str, company_name: str, doc_type: str,
     for line in text.splitlines():
         s = line.strip()
         if not s:
-            if flag_type:
-                flag_type = None   # blank line ends flag block
-            continue
-
-        # ── Separators ────────────────────────────────────────────────────────
-        if RE_SEPARATOR.match(s):
-            continue
-
-        # ── Box-drawing block end ──────────────────────────────────────────────
-        if RE_BOX_END.match(s):
-            flag_type = None
-            continue
-
-        # ── Box-drawing block start / mid — classify on first line ────────────
-        if RE_BOX_START.match(s):
-            detected = _detect_flag(s) or 'lawyer'
-            flag_type = detected
-            _add_flag_para(doc, s, flag_type, is_label=True)
-            continue
-
-        if RE_BOX_MID.match(s) and flag_type:
-            _add_flag_para(doc, s, flag_type, is_label=False)
-            continue
-
-        # ── Inline flag lines ──────────────────────────────────────────────────
-        detected = _detect_flag(s)
-        if detected:
-            flag_type = detected
-            _add_flag_para(doc, s, flag_type, is_label=True)
-            continue
-
-        if flag_type and (s.startswith(' ') or s.startswith('\t') or
-                          not RE_TOP_CLAUSE.match(s)):
-            _add_flag_para(doc, s, flag_type, is_label=False)
-            continue
-
-        # Non-flag line resets flag context
-        flag_type = None
-
-        # ── Clause headings ────────────────────────────────────────────────────
-        level, num_str, text_str = _clause_parts(s)
-        if level:
-            _add_clause_heading(doc, num_str, text_str, level)
-            continue
-
-        # ── Body paragraph with placeholder colouring ─────────────────────────
-        _para_with_placeholders(doc, s)
-
-    # Execution block
-    _add_execution_block(doc)
-
-    return doc
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# REDLINE document builder
-# ══════════════════════════════════════════════════════════════════════════════
-
-def _build_redline(text: str, doc_type: str, corridor: str,
-                   date_str: str) -> Document:
-    doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(), doc_type.replace('_', ' ').title())
-    corridor_label = CORRIDOR_LABELS.get(corridor.upper(), corridor)
-
-    doc = Document()
-    sect = doc.sections[0]
-    sect.top_margin    = Inches(1.0)
-    sect.bottom_margin = Inches(1.0)
-    sect.left_margin   = Inches(1.25)
-    sect.right_margin  = Inches(1.25)
-
-    _setup_header_footer(sect, doc_type_label, corridor_label)
-    doc.styles['Normal'].font.name = FONT_BODY
-    doc.styles['Normal'].font.size = SZ_BODY
-
-    _add_cover_block(doc, doc_type_label, corridor_label, "Redline Version", date_str)
-
-    flag_type = None
-
-    for line in text.splitlines():
-        s = line.strip()
-        if not s:
             flag_type = None
             continue
         if RE_SEPARATOR.match(s):
@@ -728,34 +696,7 @@ def _build_redline(text: str, doc_type: str, corridor: str,
             flag_type = None
             continue
 
-        # ── Inserted / removed markers ─────────────────────────────────────────
-        if s.startswith('>> INSERTED:') or s.startswith('INSERTED:'):
-            _, _, rest = s.partition(':')
-            para = doc.add_paragraph()
-            _para_spacing(para, after=80)
-            r_lbl = para.add_run("INSERTED: ")
-            r_lbl.font.name  = FONT_UI
-            r_lbl.font.bold  = True
-            r_lbl.font.size  = SZ_LABEL
-            r_lbl.font.color.rgb = GREEN
-            r_body = para.add_run(rest.strip())
-            _fmt(r_body, color=GREEN)
-            continue
-
-        if s.startswith('>> REMOVED:') or s.startswith('REMOVED:') or s.startswith('ORIGINAL:'):
-            _, _, rest = s.partition(':')
-            para = doc.add_paragraph()
-            _para_spacing(para, after=80)
-            r_lbl = para.add_run("REMOVED: ")
-            r_lbl.font.name  = FONT_UI
-            r_lbl.font.bold  = True
-            r_lbl.font.size  = SZ_LABEL
-            r_lbl.font.color.rgb = RED
-            r_body = para.add_run(rest.strip())
-            _fmt(r_body, color=RED, strike=True)
-            continue
-
-        # ── Flag boxes ────────────────────────────────────────────────────────
+        # Box-drawing blocks
         if RE_BOX_START.match(s):
             flag_type = _detect_flag(s) or 'lawyer'
             _add_flag_para(doc, s, flag_type, is_label=True)
@@ -764,6 +705,7 @@ def _build_redline(text: str, doc_type: str, corridor: str,
             _add_flag_para(doc, s, flag_type)
             continue
 
+        # Inline flags
         detected = _detect_flag(s)
         if detected:
             flag_type = detected
@@ -774,10 +716,91 @@ def _build_redline(text: str, doc_type: str, corridor: str,
             continue
         flag_type = None
 
-        # ── Clause headings ────────────────────────────────────────────────────
-        level, num_str, text_str = _clause_parts(s)
+        # Clause headings
+        level, num_str, title_str = _clause_parts(s)
         if level:
-            _add_clause_heading(doc, num_str, text_str, level)
+            _add_clause_heading(doc, num_str, title_str, level)
+            continue
+
+        _para_with_placeholders(doc, s)
+
+    _add_execution_block(doc)
+    return doc
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# REDLINE document
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _build_redline(text: str, doc_type: str, corridor: str,
+                   date_str: str) -> Document:
+    doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(),
+                     doc_type.replace('_', ' ').title())
+    corridor_label = CORRIDOR_LABELS.get(corridor.upper(), corridor)
+    gov_law        = CORRIDOR_GOV_LAW.get(corridor.upper(), "—")
+
+    doc, sect = _new_doc()
+    _setup_header_footer(sect, doc_type_label, corridor_label)
+    _add_cover_block(doc, doc_type_label, corridor_label, gov_law, "Redline Version", date_str)
+
+    flag_type = None
+
+    for line in text.splitlines():
+        s = line.strip()
+        if not s:
+            flag_type = None
+            continue
+        if RE_SEPARATOR.match(s):
+            continue
+        if RE_BOX_END.match(s):
+            flag_type = None
+            continue
+
+        # ── Insertion — underlined green #059669 ──────────────────────────────
+        if s.startswith('>> INSERTED:') or s.startswith('INSERTED:'):
+            _, _, rest = s.partition(':')
+            para = doc.add_paragraph()
+            _para_spacing(para, after=80)
+            rl = para.add_run("INSERTED: ")
+            _fmt(rl, font=FONT_UI, bold=True, size=SZ_LABEL, color=INS_CLR)
+            rb = para.add_run(rest.strip())
+            _fmt(rb, underline=True, color=INS_CLR)
+            continue
+
+        # ── Deletion — strikethrough red #DC2626 ──────────────────────────────
+        if (s.startswith('>> REMOVED:') or s.startswith('REMOVED:')
+                or s.startswith('ORIGINAL:')):
+            _, _, rest = s.partition(':')
+            para = doc.add_paragraph()
+            _para_spacing(para, after=80)
+            rl = para.add_run("REMOVED: ")
+            _fmt(rl, font=FONT_UI, bold=True, size=SZ_LABEL, color=DEL_CLR)
+            rb = para.add_run(rest.strip())
+            _fmt(rb, strike=True, color=DEL_CLR)
+            continue
+
+        # Flag boxes
+        if RE_BOX_START.match(s):
+            flag_type = _detect_flag(s) or 'lawyer'
+            _add_flag_para(doc, s, flag_type, is_label=True)
+            continue
+        if RE_BOX_MID.match(s) and flag_type:
+            _add_flag_para(doc, s, flag_type)
+            continue
+        detected = _detect_flag(s)
+        if detected:
+            flag_type = detected
+            _add_flag_para(doc, s, flag_type, is_label=True)
+            continue
+        if flag_type and not RE_TOP_CLAUSE.match(s):
+            _add_flag_para(doc, s, flag_type)
+            continue
+        flag_type = None
+
+        # Clause headings
+        level, num_str, title_str = _clause_parts(s)
+        if level:
+            _add_clause_heading(doc, num_str, title_str, level)
             continue
 
         para = doc.add_paragraph()
@@ -788,19 +811,15 @@ def _build_redline(text: str, doc_type: str, corridor: str,
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMMENTARY document builder
+# COMMENTARY document
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _action_color(text: str):
     u = text.upper()
-    if 'LAWYER REVIEW' in u:
-        return LAWYER_CLR, True
-    if 'ACTION REQUIRED' in u or 'USER INPUT' in u:
-        return ACTION_CLR, False
-    if 'VERIFY' in u:
-        return NOTE_CLR, False
-    if 'NONE' in u or 'FULL_AUTO' in u:
-        return GREEN, False
+    if 'LAWYER REVIEW' in u:           return LAWYER_CLR, True
+    if 'ACTION REQUIRED' in u or 'USER INPUT' in u: return ACTION_CLR, False
+    if 'VERIFY' in u:                  return NOTE_CLR, False
+    if 'NONE' in u or 'FULL_AUTO' in u: return INS_CLR, False
     return BODY_CLR, False
 
 
@@ -808,9 +827,9 @@ def _render_pdpa_table(doc, rows: list):
     tbl = doc.add_table(rows=1, cols=2)
     tbl.style = 'Table Grid'
     hdr = tbl.rows[0].cells
-    _set_cell_bg(hdr[0], TABLE_HDR_HEX)
-    _set_cell_bg(hdr[1], TABLE_HDR_HEX)
-    for cell, lbl in zip(hdr, ['PDPA / Data Protection Obligation', 'Status']):
+    _set_cell_bg(hdr[0], TABLE_HDR_HX)
+    _set_cell_bg(hdr[1], TABLE_HDR_HX)
+    for cell, lbl in zip(hdr, ['Data Protection Obligation', 'Status']):
         p = cell.paragraphs[0]
         p.clear()
         r = p.add_run(lbl)
@@ -819,18 +838,17 @@ def _render_pdpa_table(doc, rows: list):
         r.font.bold  = True
         r.font.color.rgb = AMETHYST
 
-    for text in rows:
-        is_risk = text.startswith('PDPC enforcement risk')
-        item, _, status = text.rpartition(' — ') if ' — ' in text else (text, '', '')
+    for row_text in rows:
+        is_risk = row_text.startswith('PDPC enforcement risk')
+        item, _, status = (row_text.rpartition(' — ')
+                           if ' — ' in row_text else (row_text, '', ''))
         item   = item.lstrip('✅⚠️☑ ').strip()
         status = status.strip()
-
         u = status.upper()
-        clr = (GREEN    if any(x in u for x in ('INSERTED', 'COMPLIANT', 'LOW'))   else
-               ACTION_CLR if any(x in u for x in ('PARAMETERIZED', 'MEDIUM'))      else
-               LAWYER_CLR if any(x in u for x in ('LAWYER', 'HIGH', 'REVIEW'))     else
+        clr = (INS_CLR    if any(x in u for x in ('INSERTED', 'COMPLIANT', 'LOW'))   else
+               ACTION_CLR if any(x in u for x in ('PARAMETERIZED', 'MEDIUM'))        else
+               LAWYER_CLR if any(x in u for x in ('LAWYER', 'HIGH', 'REVIEW'))       else
                BODY_CLR)
-
         row = tbl.add_row().cells
         for cell, txt in zip(row, [item, status]):
             p = cell.paragraphs[0]
@@ -841,25 +859,19 @@ def _render_pdpa_table(doc, rows: list):
 
 def _build_commentary(text: str, company_name: str, doc_type: str,
                        corridor: str, date_str: str) -> Document:
-    doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(), doc_type.replace('_', ' ').title())
+    doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(),
+                     doc_type.replace('_', ' ').title())
     corridor_label = CORRIDOR_LABELS.get(corridor.upper(), corridor)
+    gov_law        = CORRIDOR_GOV_LAW.get(corridor.upper(), "—")
 
-    doc = Document()
-    sect = doc.sections[0]
-    sect.top_margin    = Inches(1.0)
-    sect.bottom_margin = Inches(1.0)
-    sect.left_margin   = Inches(1.25)
-    sect.right_margin  = Inches(1.25)
-
+    doc, sect = _new_doc()
     _setup_header_footer(sect, doc_type_label, corridor_label)
-    doc.styles['Normal'].font.name = FONT_BODY
-    doc.styles['Normal'].font.size = SZ_BODY
-
-    _add_cover_block(doc, doc_type_label, corridor_label, "Commentary & Legal Basis", date_str)
+    _add_cover_block(doc, doc_type_label, corridor_label, gov_law,
+                     "Commentary & Legal Basis", date_str)
     _add_deal_profile_table(doc, corridor, doc_type, company_name, date_str)
 
-    in_pdpa = False
-    pdpa_rows: list = []
+    in_pdpa   = False
+    pdpa_rows = []
     flag_type = None
 
     for line in text.splitlines():
@@ -868,17 +880,18 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
             flag_type = None
             continue
 
-        # ── PDPA checklist ─────────────────────────────────────────────────────
+        # PDPA checklist
         if 'PDPA COMPLIANCE CHECKLIST' in s or 'DATA PROTECTION CHECKLIST' in s:
             in_pdpa = True
             p = doc.add_paragraph()
             _para_spacing(p, before=240, after=80)
-            _add_full_border(p, AMETHYST_HEX, COVER_BG_HEX)
+            _add_left_border(p, AMETHYST_HX, bg_hex=COVER_BG_HX, thickness='18')
             r = p.add_run(s)
-            r.font.name  = FONT_UI
-            r.font.bold  = True
-            r.font.size  = SZ_H1
-            r.font.color.rgb = AMETHYST
+            r.font.name       = FONT_UI
+            r.font.bold       = True
+            r.font.small_caps = True
+            r.font.size       = SZ_H1
+            r.font.color.rgb  = AMETHYST
             continue
 
         if in_pdpa:
@@ -895,20 +908,20 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
         if RE_SEPARATOR.match(s):
             continue
 
-        # ── Clause entry header ────────────────────────────────────────────────
+        # Clause entry header — [CLAUSE X.X] ID in monospace + amethyst left border
         if RE_CLAUSE_HEADER.match(s):
             _horizontal_rule(doc)
             p = doc.add_paragraph()
             _para_spacing(p, before=160, after=60)
-            _add_left_border(p, AMETHYST_HEX, bg_hex=COVER_BG_HEX, thickness='18')
-            r = p.add_run(s)
-            r.font.name  = FONT_UI
-            r.font.bold  = True
-            r.font.size  = SZ_H1
-            r.font.color.rgb = AMETHYST
+            _add_left_border(p, AMETHYST_HX, bg_hex=COVER_BG_HX, thickness='18')
+            r_id = p.add_run(s)
+            r_id.font.name  = FONT_MONO
+            r_id.font.bold  = True
+            r_id.font.size  = SZ_H1
+            r_id.font.color.rgb = AMETHYST
             continue
 
-        # ── Flag boxes ────────────────────────────────────────────────────────
+        # Flag boxes
         if RE_BOX_END.match(s):
             flag_type = None
             continue
@@ -929,40 +942,48 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
             continue
         flag_type = None
 
-        # ── Four-field structured labels ───────────────────────────────────────
-        matched_label = next((lbl for lbl in FIELD_LABELS if s.startswith(lbl)), None)
-        if matched_label:
-            rest = s[len(matched_label):].strip()
+        # Four structured fields:
+        #   Original:  → grey italic Georgia (original text)
+        #   Change:    → dark Georgia
+        #   Reason:    → blue-grey italic Georgia
+        #   Action required: → colour-coded
+        matched_lbl = next((l for l in FIELD_LABELS if s.startswith(l)), None)
+        if matched_lbl:
+            rest = s[len(matched_lbl):].strip()
             para = doc.add_paragraph()
             _para_spacing(para, before=0, after=40)
-            _set_para_indent(para, 180)
-            r_lbl = para.add_run(matched_label + ' ')
+            _set_indent(para, left_twips=180)
+
+            r_lbl = para.add_run(matched_lbl + '  ')
             r_lbl.font.name  = FONT_UI
             r_lbl.font.bold  = True
             r_lbl.font.size  = SZ_LABEL
             r_lbl.font.color.rgb = SECONDARY
-            if matched_label == 'Action required:':
+
+            if matched_lbl == 'Original:':
+                r_val = para.add_run(rest)
+                _fmt(r_val, italic=True, color=SECONDARY)
+            elif matched_lbl == 'Reason:':
+                r_val = para.add_run(rest)
+                _fmt(r_val, italic=True, color=BLUE_GREY)
+            elif matched_lbl == 'Action required:':
                 clr, bold = _action_color(rest)
                 r_val = para.add_run(rest)
-                r_val.font.name  = FONT_UI
-                r_val.font.bold  = bold
-                r_val.font.size  = SZ_LABEL
-                r_val.font.color.rgb = clr
+                _fmt(r_val, font=FONT_UI, bold=bold, size=SZ_LABEL, color=clr)
             else:
                 r_val = para.add_run(rest)
                 _fmt(r_val)
             continue
 
-        # ── Recommendations / arrows ───────────────────────────────────────────
+        # Recommendations
         if s.startswith('→') or s.startswith('Recommendation:'):
             para = doc.add_paragraph()
             _para_spacing(para, before=0, after=40)
-            _set_para_indent(para, 360)
-            r = para.add_run(s)
-            _fmt(r, italic=True, color=SECONDARY)
+            _set_indent(para, left_twips=360)
+            _fmt(para.add_run(s), italic=True, color=SECONDARY)
             continue
 
-        # ── Default body paragraph ─────────────────────────────────────────────
+        # Default body
         para = doc.add_paragraph()
         _para_spacing(para, after=80)
         _fmt(para.add_run(s))
@@ -974,7 +995,7 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Public entry point
+# Public entry point — signature preserved from original
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_outputs(
@@ -991,7 +1012,6 @@ def build_outputs(
     out.mkdir(parents=True, exist_ok=True)
     prefix = f"{job_id}_" if job_id else ""
 
-    # Canonical preparation date (overrides any date Claude produced)
     date_str = datetime.utcnow().strftime("%d %B %Y")
     commentary_text = re.sub(
         r'(?i)Date of adaptation:[^\n]*',
@@ -1001,16 +1021,16 @@ def build_outputs(
 
     paths = {}
 
-    clean_doc = _build_clean(clean_text, company_name, doc_type, corridor, date_str)
+    doc = _build_clean(clean_text, company_name, doc_type, corridor, date_str)
     paths['clean'] = str(out / f"{prefix}clean.docx")
-    clean_doc.save(paths['clean'])
+    doc.save(paths['clean'])
 
-    redline_doc = _build_redline(redline_text, doc_type, corridor, date_str)
+    doc = _build_redline(redline_text, doc_type, corridor, date_str)
     paths['redline'] = str(out / f"{prefix}redline.docx")
-    redline_doc.save(paths['redline'])
+    doc.save(paths['redline'])
 
-    commentary_doc = _build_commentary(commentary_text, company_name, doc_type, corridor, date_str)
+    doc = _build_commentary(commentary_text, company_name, doc_type, corridor, date_str)
     paths['commentary'] = str(out / f"{prefix}commentary.docx")
-    commentary_doc.save(paths['commentary'])
+    doc.save(paths['commentary'])
 
     return paths
