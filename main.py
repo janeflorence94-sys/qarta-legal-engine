@@ -1,11 +1,16 @@
 import json
 import os
+import smtplib
 import threading
 import uuid
 from datetime import datetime, timezone
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
+from typing import List
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -256,3 +261,81 @@ def serve_output(filename: str):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename=filename,
     )
+
+
+# ── Attorney email ─────────────────────────────────────────────────────────────
+
+class AttorneyEmailRequest(BaseModel):
+    attorney_email: str
+    job_id: str
+    document_urls: List[str]
+
+
+@app.post("/send-attorney")
+def send_attorney(req: AttorneyEmailRequest):
+    smtp_email    = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_email or not smtp_password:
+        raise HTTPException(
+            status_code=500,
+            detail="SMTP credentials are not configured on the server.",
+        )
+
+    if "@" not in req.attorney_email or "." not in req.attorney_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Invalid attorney_email address.")
+
+    if len(req.document_urls) != 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Exactly 3 document URLs are required (clean, redline, commentary).",
+        )
+
+    labels = ["Clean Version", "Redline Version", "Commentary"]
+    doc_lines = "\n".join(
+        f"  {i+1}. {label}:\n     {url}"
+        for i, (label, url) in enumerate(zip(labels, req.document_urls))
+    )
+
+    body = f"""\
+Dear Attorney,
+
+Please find below the download links for the adapted legal documents prepared by Qarta Legal for your review.
+
+Job Reference: {req.job_id}
+Prepared:      {datetime.now(timezone.utc).strftime("%d %B %Y, %H:%M UTC")}
+
+─────────────────────────────────────────
+DOCUMENT DOWNLOAD LINKS (valid for 1 hour)
+─────────────────────────────────────────
+{doc_lines}
+
+─────────────────────────────────────────
+
+These documents have been localised by the Qarta Legal engine and are provided for attorney review prior to execution. Please do not reply to this email directly.
+
+For queries, contact the Qarta team via your client portal.
+
+Regards,
+Qarta Legal
+"""
+
+    msg = MIMEMultipart()
+    msg["From"]    = smtp_email
+    msg["To"]      = req.attorney_email
+    msg["Subject"] = f"Legal Documents for Review — Qarta Legal [{req.job_id}]"
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, req.attorney_email, msg.as_string())
+    except smtplib.SMTPAuthenticationError:
+        raise HTTPException(
+            status_code=500,
+            detail="SMTP authentication failed. Check SMTP_EMAIL and SMTP_PASSWORD.",
+        )
+    except smtplib.SMTPException as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {e}")
+
+    return {"status": "sent", "recipient": req.attorney_email, "job_id": req.job_id}
