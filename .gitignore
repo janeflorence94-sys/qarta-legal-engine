@@ -9,3 +9,4 @@ outputs/
 !04_testing_protocol.docx
 venv/
 .venv/
+node_modules/
