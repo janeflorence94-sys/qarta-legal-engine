@@ -123,8 +123,21 @@ def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
 
     corr = corridor.upper()
     if corr == "CN_SG":
-        b1_content = b1_raw   # Full block1 — current behaviour for CN-SG
-        print(f"[pipeline] block1: full (CN_SG, {len(b1_raw):,} chars)")
+        # Slim path: Parts 1–6 extracted individually via markers.
+        # Falls back to full block1 if any part is missing (zero regression risk).
+        cn_sg_parts = []
+        cn_sg_loaded = []
+        for n in [1, 2, 3, 4, 5, 6]:
+            p = _extract_part(b1_raw, n)
+            if p:
+                cn_sg_parts.append(p)
+                cn_sg_loaded.append(f"Part{n}")
+        if len(cn_sg_parts) == 6:
+            b1_content = "\n\n".join(cn_sg_parts)
+            print(f"[pipeline] block1: slim (CN_SG) — loaded {cn_sg_loaded} ({len(b1_content):,} chars, was {len(b1_raw):,} full)")
+        else:
+            b1_content = b1_raw   # fallback: extraction incomplete
+            print(f"[pipeline] block1: full fallback (CN_SG) — only extracted {cn_sg_loaded}, using full {len(b1_raw):,} chars")
     else:
         selected = []
         loaded_parts = []
