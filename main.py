@@ -1,6 +1,7 @@
 import json
 import os
 import smtplib
+import sys
 import threading
 import traceback
 import uuid
@@ -117,7 +118,7 @@ def _run_pipeline(
     deal_profile: dict = None,
 ):
     """Runs in a background thread. Writes status to /tmp/outputs/{job_id}_status.json."""
-    print(f"[job {job_id}] Pipeline started.")
+    print(f"[job {job_id}] Pipeline started.", flush=True)
     try:
         result = adapt_contract(
             file_bytes=file_bytes,
@@ -154,11 +155,11 @@ def _run_pipeline(
                 "completed_at":   datetime.now(timezone.utc).isoformat(),
             },
         })
-        print(f"[job {job_id}] Complete.")
+        print(f"[job {job_id}] Complete.", flush=True)
 
     except Exception as e:
         tb = traceback.format_exc()
-        print(f"[PIPELINE ERROR] job_id={job_id}\n{tb}")
+        print(f"[PIPELINE ERROR] job_id={job_id}\n{tb}", flush=True)
         _update_status(job_id, {"status": "error", "error": f"{str(e)}\n{tb}"})
 
 
@@ -228,6 +229,7 @@ async def adapt(
         daemon=True,
     )
     thread.start()
+    sys.stdout.flush()
 
     return JSONResponse(
         status_code=202,
