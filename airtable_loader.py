@@ -63,20 +63,41 @@ CORRIDOR_TABLE_MAP = {
 STRATEGIES_TABLE = "Rewrite Strategies"
 
 
+# Maps corridor key → the suffix Airtable appends to every table name in that corridor.
+CORRIDOR_SUFFIX = {
+    "CN_SG": "(CN-SG)",
+    "SG_ID": "(SG-ID)",
+    "SG_MY": "(SG-MY)",
+}
+
+
 def get_table_name(corridor: str, doc_type: str) -> str:
-    """Resolve (corridor, doc_type) → Airtable table name.
-    Falls back to CN_SG table if no corridor-specific entry exists."""
-    key = (corridor.upper(), doc_type.lower())
+    """Resolve (corridor, doc_type) → Airtable table name, with corridor suffix.
+
+    Appends the corridor suffix (e.g. '(CN-SG)') to the resolved name unless
+    the name already ends with that suffix — handles both map entries that bake
+    in the suffix (SG_MY) and those that don't (CN_SG legacy entries).
+    Falls back to CN_SG table if no corridor-specific entry exists.
+    """
+    corr = corridor.upper()
+    key = (corr, doc_type.lower())
     if key in CORRIDOR_TABLE_MAP:
-        return CORRIDOR_TABLE_MAP[key]
-    # CN_SG fallback — keeps existing doc types working for any corridor
-    fallback = ("CN_SG", doc_type.lower())
-    if fallback in CORRIDOR_TABLE_MAP:
-        return CORRIDOR_TABLE_MAP[fallback]
-    raise ValueError(
-        f"No Airtable table configured for corridor='{corridor}', doc_type='{doc_type}'. "
-        "Add an entry to CORRIDOR_TABLE_MAP in airtable_loader.py."
-    )
+        name = CORRIDOR_TABLE_MAP[key]
+    else:
+        # CN_SG fallback — keeps existing doc types working for any corridor
+        fallback = ("CN_SG", doc_type.lower())
+        if fallback in CORRIDOR_TABLE_MAP:
+            name = CORRIDOR_TABLE_MAP[fallback]
+        else:
+            raise ValueError(
+                f"No Airtable table configured for corridor='{corridor}', doc_type='{doc_type}'. "
+                "Add an entry to CORRIDOR_TABLE_MAP in airtable_loader.py."
+            )
+
+    suffix = CORRIDOR_SUFFIX.get(corr)
+    if suffix and not name.endswith(suffix):
+        name = f"{name} {suffix}"
+    return name
 
 
 def _get_headers():
