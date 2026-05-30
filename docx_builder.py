@@ -148,6 +148,16 @@ RE_MD_BLOCK    = re.compile(r'^>\s*(.*)')             # > blockquote
 
 FIELD_LABELS = ('Original:', 'Change:', 'Reason:', 'Action required:')
 
+# Bilingual (SG-ID) — corridors that get a two-column EN | local-language layout
+_BILINGUAL_CORRIDORS  = frozenset({"SG_ID"})
+_SWORN_PLACEHOLDER    = "[ Sworn translation required — penerjemah tersumpah ]"
+_ID_MARKERS           = (
+    'KUHPerdata', 'Pasal ', 'UU Bahasa', 'UU No.', 'Bea Materai',
+    'penerjemah', 'tersumpah', 'perjanjian',
+)
+_RE_ID_BLOCK_START = re.compile(r'^\[BAHASA INDONESIA\]',  re.IGNORECASE)
+_RE_ID_BLOCK_END   = re.compile(r'^\[/BAHASA INDONESIA\]', re.IGNORECASE)
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Low-level XML / run helpers
@@ -751,6 +761,210 @@ def _para_with_placeholders(doc, line: str):
     return para
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# SG-ID bilingual layout helpers
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _parse_bilingual_blocks(text: str) -> list:
+    """Split clean text into per-clause bilingual blocks.
+
+    Returns [{'en': str, 'id': str|None}, ...] where each dict covers one
+    top-level clause.  Content between [BAHASA INDONESIA] / [/BAHASA INDONESIA]
+    tags is routed to the 'id' slot; everything else goes to 'en'.
+    If no [BAHASA INDONESIA] tags appear, 'id' is None for every block and the
+    caller substitutes the sworn-translator placeholder.
+    """
+    blocks: list = []
+    current_en: list = []
+    current_id: list = []
+    in_id       = False
+    has_content = False
+
+    def _flush():
+        en  = '\n'.join(current_en).strip()
+        id_ = '\n'.join(current_id).strip() or None
+        if en or id_:
+            blocks.append({'en': en, 'id': id_})
+
+    for line in text.splitlines():
+        s = line.strip()
+
+        if _RE_ID_BLOCK_START.match(s):
+            in_id = True
+            continue
+        if _RE_ID_BLOCK_END.match(s):
+            in_id = False
+            continue
+
+        if in_id:
+            current_id.append(line)
+            has_content = True
+            continue
+
+        # Top-level clause boundary → flush previous block first
+        if RE_TOP_CLAUSE.match(s) and has_content:
+            _flush()
+            current_en = [line]
+            current_id = []
+        else:
+            current_en.append(line)
+        has_content = True
+
+    _flush()
+    return blocks
+
+
+def _render_lines_to_cell(container, lines_text: str) -> None:
+    """Render clean-format lines into a table cell (or Document) container.
+
+    Mirrors the _build_clean loop body so it works identically whether the
+    target is a full Document or a table Cell — both expose .add_paragraph().
+    The cell's initial auto-created empty paragraph acts as a small top-spacer.
+    """
+    flag_type = None
+    for line in lines_text.splitlines():
+        s = line.strip()
+        if not s:
+            flag_type = None
+            continue
+        if RE_SEPARATOR.match(s):
+            continue
+        if RE_BOX_END.match(s):
+            flag_type = None
+            continue
+
+        # Markdown structural
+        m_h = RE_MD_HEADING.match(s)
+        if m_h:
+            flag_type = None
+            _write_md_heading(container, len(m_h.group(1)), m_h.group(2).strip())
+            continue
+        if RE_MD_HR.match(s):
+            _horizontal_rule(container)
+            continue
+        m_bq = RE_MD_BLOCK.match(s)
+        if m_bq:
+            flag_type = None
+            content = m_bq.group(1).strip()
+            _add_flag_para(container, content or s, _detect_flag(content) or 'note')
+            continue
+
+        # Box-drawing flag blocks
+        if RE_BOX_START.match(s):
+            flag_type = _detect_flag(s) or 'lawyer'
+            _add_flag_para(container, s, flag_type, is_label=True)
+            continue
+        if RE_BOX_MID.match(s) and flag_type:
+            _add_flag_para(container, s, flag_type)
+            continue
+
+        # Inline flags
+        detected = _detect_flag(s)
+        if detected:
+            flag_type = detected
+            _add_flag_para(container, s, flag_type, is_label=True)
+            continue
+        if flag_type and not RE_TOP_CLAUSE.match(s):
+            _add_flag_para(container, s, flag_type)
+            continue
+        flag_type = None
+
+        # Clause headings
+        level, num_str, title_str = _clause_parts(s)
+        if level:
+            _add_clause_heading(container, num_str, title_str, level)
+            continue
+
+        _para_with_placeholders(container, s)
+
+
+def _add_bilingual_notice(doc) -> None:
+    """Render the UU Bahasa Art. 31 compliance notice as an amber flag box."""
+    p = doc.add_paragraph()
+    _para_spacing(p, before=120, after=80)
+    _set_indent(p, left_twips=180)
+    _add_left_border(p, ACTION_BD_HX, bg_hex=ACTION_BG_HX, thickness='24')
+    r = p.add_run(
+        "⚠ BILINGUAL REQUIREMENT — UU Bahasa (Law No.…24/2009) "
+        "Art.…31: Agreements involving Indonesian parties or performed in "
+        "Indonesia must be executed in Bahasa Indonesia.  Where a bilingual version "
+        "is used, the Bahasa Indonesia text is the legally prevailing version.  "
+        "Clauses showing “" + _SWORN_PLACEHOLDER + "” require a sworn "
+        "translator (penerjemah tersumpah) before execution."
+    )
+    r.font.name      = FONT_UI
+    r.font.size      = SZ_LABEL
+    r.font.color.rgb = ACTION_CLR
+
+
+def _build_clean_bilingual(doc, text: str) -> None:
+    """Render the clean document body as a two-column EN | BI bilingual table.
+
+    LEFT  column (2.9 in) : English adapted clause text
+    RIGHT column (2.9 in) : Bahasa Indonesia text produced by the engine, or
+                             the sworn-translator placeholder in grey italic.
+
+    Each top-level clause occupies one table row — keeping the two languages
+    clause-aligned when the document is reviewed side-by-side.
+    """
+    _add_bilingual_notice(doc)
+
+    blocks = _parse_bilingual_blocks(text)
+
+    if not blocks:
+        # Fallback: plain single-column rendering when text has no clause structure
+        for line in text.splitlines():
+            s = line.strip()
+            if not s:
+                continue
+            lv, num_str, title_str = _clause_parts(s)
+            if lv:
+                _add_clause_heading(doc, num_str, title_str, lv)
+            else:
+                _para_with_placeholders(doc, s)
+        return
+
+    # Build table
+    tbl = doc.add_table(rows=1, cols=2)
+    tbl.style = 'Table Grid'
+    tbl.columns[0].width = Inches(2.9)
+    tbl.columns[1].width = Inches(2.9)
+
+    # Header row — amethyst background, white bold label
+    for cell, label in zip(tbl.rows[0].cells, ['ENGLISH', 'BAHASA INDONESIA']):
+        _set_cell_bg(cell, AMETHYST_HX)
+        p = cell.paragraphs[0]
+        p.clear()
+        _para_spacing(p, before=80, after=80)
+        r = p.add_run(label)
+        r.font.name      = FONT_UI
+        r.font.size      = SZ_LABEL
+        r.font.bold      = True
+        r.font.color.rgb = WHITE
+
+    # One data row per bilingual block (one top-level clause)
+    for block in blocks:
+        data_row = tbl.add_row().cells
+        en_cell, id_cell = data_row[0], data_row[1]
+
+        # English side
+        _render_lines_to_cell(en_cell, block['en'])
+
+        # Indonesian side — engine-produced text or sworn-translator placeholder
+        id_text = (block.get('id') or '').strip()
+        if id_text:
+            _render_lines_to_cell(id_cell, id_text)
+        else:
+            p = id_cell.paragraphs[0]
+            p.clear()
+            _para_spacing(p, before=80, after=80)
+            r = p.add_run(_SWORN_PLACEHOLDER)
+            r.font.name      = FONT_BODY
+            r.font.size      = SZ_BODY
+            r.font.italic    = True
+            r.font.color.rgb = SECONDARY
+
+
 def _build_clean(text: str, company_name: str, doc_type: str,
                  corridor: str, date_str: str) -> Document:
     doc_type_label = DOC_TYPE_LABELS.get(doc_type.lower(),
@@ -763,63 +977,68 @@ def _build_clean(text: str, company_name: str, doc_type: str,
     _add_cover_block(doc, doc_type_label, corridor_label, gov_law, "Clean Version", date_str)
     _add_deal_profile_table(doc, corridor, doc_type, company_name, date_str)
 
-    flag_type = None
-
-    for line in text.splitlines():
-        s = line.strip()
-        if not s:
-            flag_type = None
-            continue
-        if RE_SEPARATOR.match(s):
-            continue
-        if RE_BOX_END.match(s):
-            flag_type = None
-            continue
-
-        # ── Markdown structural elements ──────────────────────────────────────
-        m_h = RE_MD_HEADING.match(s)
-        if m_h:
-            flag_type = None
-            _write_md_heading(doc, len(m_h.group(1)), m_h.group(2).strip())
-            continue
-        if RE_MD_HR.match(s):
-            _horizontal_rule(doc)
-            continue
-        m_bq = RE_MD_BLOCK.match(s)
-        if m_bq:
-            flag_type = None
-            content = m_bq.group(1).strip()
-            _add_flag_para(doc, content or s, _detect_flag(content) or 'note')
-            continue
-        # ─────────────────────────────────────────────────────────────────────
-
-        # Box-drawing blocks
-        if RE_BOX_START.match(s):
-            flag_type = _detect_flag(s) or 'lawyer'
-            _add_flag_para(doc, s, flag_type, is_label=True)
-            continue
-        if RE_BOX_MID.match(s) and flag_type:
-            _add_flag_para(doc, s, flag_type)
-            continue
-
-        # Inline flags
-        detected = _detect_flag(s)
-        if detected:
-            flag_type = detected
-            _add_flag_para(doc, s, flag_type, is_label=True)
-            continue
-        if flag_type and not RE_TOP_CLAUSE.match(s):
-            _add_flag_para(doc, s, flag_type)
-            continue
+    if corridor.upper() in _BILINGUAL_CORRIDORS:
+        # ── SG-ID and any future dual-language corridor ───────────────────────
+        _build_clean_bilingual(doc, text)
+    else:
+        # ── Standard single-column English layout (CN-SG, SG-MY, CN-MY …) ───
         flag_type = None
 
-        # Clause headings
-        level, num_str, title_str = _clause_parts(s)
-        if level:
-            _add_clause_heading(doc, num_str, title_str, level)
-            continue
+        for line in text.splitlines():
+            s = line.strip()
+            if not s:
+                flag_type = None
+                continue
+            if RE_SEPARATOR.match(s):
+                continue
+            if RE_BOX_END.match(s):
+                flag_type = None
+                continue
 
-        _para_with_placeholders(doc, s)
+            # ── Markdown structural elements ──────────────────────────────────────
+            m_h = RE_MD_HEADING.match(s)
+            if m_h:
+                flag_type = None
+                _write_md_heading(doc, len(m_h.group(1)), m_h.group(2).strip())
+                continue
+            if RE_MD_HR.match(s):
+                _horizontal_rule(doc)
+                continue
+            m_bq = RE_MD_BLOCK.match(s)
+            if m_bq:
+                flag_type = None
+                content = m_bq.group(1).strip()
+                _add_flag_para(doc, content or s, _detect_flag(content) or 'note')
+                continue
+            # ─────────────────────────────────────────────────────────────────────
+
+            # Box-drawing blocks
+            if RE_BOX_START.match(s):
+                flag_type = _detect_flag(s) or 'lawyer'
+                _add_flag_para(doc, s, flag_type, is_label=True)
+                continue
+            if RE_BOX_MID.match(s) and flag_type:
+                _add_flag_para(doc, s, flag_type)
+                continue
+
+            # Inline flags
+            detected = _detect_flag(s)
+            if detected:
+                flag_type = detected
+                _add_flag_para(doc, s, flag_type, is_label=True)
+                continue
+            if flag_type and not RE_TOP_CLAUSE.match(s):
+                _add_flag_para(doc, s, flag_type)
+                continue
+            flag_type = None
+
+            # Clause headings
+            level, num_str, title_str = _clause_parts(s)
+            if level:
+                _add_clause_heading(doc, num_str, title_str, level)
+                continue
+
+            _para_with_placeholders(doc, s)
 
     _add_execution_block(doc)
     return doc
