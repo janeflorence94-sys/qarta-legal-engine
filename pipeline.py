@@ -20,6 +20,63 @@ OUTPUT_HEADERS = [
     "=== OUTPUT 3: COMMENTARY ===",
 ]
 
+# (output_num, keyword) pairs that map 1-to-1 to OUTPUT_HEADERS
+_HEADER_KEYWORDS = [(1, "CLEAN"), (2, "REDLINE"), (3, "COMMENTARY")]
+
+
+def _find_header_span(text: str, output_num: int, keyword: str):
+    """Return (start_of_line, end_after_newline) for the header line of OUTPUT N: KEYWORD.
+
+    Always returns full-line boundaries so content extracted between two header
+    spans starts and ends cleanly, even when the header carries surrounding
+    markdown decoration such as **=== OUTPUT 1: CLEAN ===**.
+
+    Tries exact match first (fast O(n) scan), then falls back to a flexible
+    regex that tolerates:
+      - Varying numbers of '=' signs or none at all
+      - Extra spaces / tabs around the parts
+      - Case differences  (Output 1 / output 1 / OUTPUT 1)
+      - Alternative separators between number and keyword  (: / - / space)
+      - Surrounding decoration  (**  ==  …  ==  **)
+    Returns (-1, -1) if the header cannot be located by either method.
+    """
+    def _line_span(pos: int):
+        """Given a character position inside `text`, return (line_start, line_end)
+        where line_end is the index just after the terminating '\\n' (or len(text))."""
+        ls = text.rfind('\n', 0, pos)
+        ls = 0 if ls == -1 else ls + 1
+        le = text.find('\n', pos)
+        le = len(text) if le == -1 else le + 1
+        return ls, le
+
+    exact = f"=== OUTPUT {output_num}: {keyword} ==="
+    idx = text.find(exact)
+    if idx != -1:
+        return _line_span(idx)
+
+    pat = re.compile(
+        rf'(?im)^[^\n]*\boutput[ \t]+{output_num}\b[^\n]*\b{re.escape(keyword)}\b[^\n]*$'
+    )
+    m = pat.search(text)
+    if m:
+        return _line_span(m.start())
+    return -1, -1
+
+
+def _header_missing(text: str, output_num: int, keyword: str) -> bool:
+    """True when the header for OUTPUT N: KEYWORD cannot be found (flexible match)."""
+    return _find_header_span(text, output_num, keyword)[0] == -1
+
+
+def _missing_headers(text: str) -> list:
+    """Return the OUTPUT_HEADERS strings that are absent from text (flexible match)."""
+    return [
+        OUTPUT_HEADERS[i]
+        for i, (n, kw) in enumerate(_HEADER_KEYWORDS)
+        if _header_missing(text, n, kw)
+    ]
+
+
 # block1 part number that contains doc-type-specific drafting rules
 DOC_TYPE_PART_MAP = {
     # CN-SG doc-type-specific parts (only used when no corridor part is loaded)
@@ -196,26 +253,34 @@ def _load_system_prompt(corridor: str = "CN_SG", doc_type: str = "") -> str:
 
 
 def _parse_response(response_text: str) -> dict:
-    """Split Claude response into clean / redline / commentary sections."""
-    missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+    """Split Claude response into clean / redline / commentary sections.
+
+    Uses _find_header_span for each section, which tries an exact string match
+    first then falls back to a flexible regex that tolerates variations in = count,
+    case, whitespace, and minor wording differences.  Raises ValueError only when
+    a section truly cannot be located by either method.
+    """
+    h1s, h1e = _find_header_span(response_text, 1, "CLEAN")
+    h2s, h2e = _find_header_span(response_text, 2, "REDLINE")
+    h3s, h3e = _find_header_span(response_text, 3, "COMMENTARY")
+
+    missing = []
+    if h1s == -1: missing.append("OUTPUT 1: CLEAN")
+    if h2s == -1: missing.append("OUTPUT 2: REDLINE")
+    if h3s == -1: missing.append("OUTPUT 3: COMMENTARY")
+
     if missing:
         raise ValueError(
-            f"Claude response is missing required output headers: {missing}\n"
-            "Raw response (first 500 chars):\n" + response_text[:500]
+            f"Output headers not found after exact + flexible matching. "
+            f"Missing: {missing}\n"
+            f"Raw response (first 500 chars):\n{response_text[:500]}"
         )
 
-    parts = {}
-    positions = {h: response_text.index(h) for h in OUTPUT_HEADERS}
-
-    clean_start = positions[OUTPUT_HEADERS[0]] + len(OUTPUT_HEADERS[0])
-    redline_start = positions[OUTPUT_HEADERS[1]] + len(OUTPUT_HEADERS[1])
-    commentary_start = positions[OUTPUT_HEADERS[2]] + len(OUTPUT_HEADERS[2])
-
-    parts["clean"] = response_text[clean_start:positions[OUTPUT_HEADERS[1]]].strip()
-    parts["redline"] = response_text[redline_start:positions[OUTPUT_HEADERS[2]]].strip()
-    parts["commentary"] = response_text[commentary_start:].strip()
-
-    return parts
+    return {
+        "clean":      response_text[h1e:h2s].strip(),
+        "redline":    response_text[h2e:h3s].strip(),
+        "commentary": response_text[h3e:].strip(),
+    }
 
 
 
@@ -652,10 +717,10 @@ Please adapt this contract and produce exactly three outputs separated by these 
     print(f"[pipeline] Received {len(response_text):,} chars.")
     print(f"[pipeline] Response preview: {response_text[:200]!r}")
 
-    missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+    missing = _missing_headers(response_text)
 
     if missing:
-        has_any = any(h in response_text for h in OUTPUT_HEADERS)
+        has_any = not (len(missing) == len(OUTPUT_HEADERS))
 
         if not has_any:
             # Connection dropped before any output — retry the full call once
@@ -663,7 +728,7 @@ Please adapt this contract and produce exactly three outputs separated by these 
             response_text = _call_claude_streaming([{"role": "user", "content": user_message}])
             print(f"[pipeline] Retry received {len(response_text):,} chars.")
             print(f"[pipeline] Retry preview: {response_text[:200]!r}")
-            missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+            missing = _missing_headers(response_text)
 
         if missing:
             # Partial output — targeted continuation (commentary-aware or generic)
@@ -671,20 +736,46 @@ Please adapt this contract and produce exactly three outputs separated by these 
             response_text = _continuation(response_text)
 
         # Check again — second continuation if still incomplete
-        still_missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+        still_missing = _missing_headers(response_text)
         if still_missing:
             print(f"[pipeline] Still missing {still_missing}. Running continuation 2...")
             response_text = _continuation(response_text)
 
         # Final check — third pass if commentary specifically still absent
-        still_missing = [h for h in OUTPUT_HEADERS if h not in response_text]
+        still_missing = _missing_headers(response_text)
         if still_missing == [OUTPUT_HEADERS[2]]:
             print("[pipeline] Commentary still absent. Running targeted commentary continuation...")
             response_text = _continuation(response_text)
 
     print("[pipeline] All sections present, parsing...")
 
-    # Step 7 — Parse and return (include record count for API metadata)
-    parsed = _parse_response(response_text)
+    # Step 7 — Parse (flexible header matching); ONE automatic retry if headers are
+    # present in the text but formatted in a way the flexible matcher still can't
+    # resolve — re-asks the model to re-emit with exact headers.
+    try:
+        parsed = _parse_response(response_text)
+    except ValueError as parse_err:
+        print(f"[pipeline] Header parse failed after flexible matching: {parse_err!r}")
+        print("[pipeline] Retrying with explicit header-format instruction...")
+        header_fix_prompt = (
+            "Your previous response could not be parsed because the output section "
+            "headers were not in the expected format. Please re-output all three "
+            "sections now using EXACTLY these headers, each on its own line with no "
+            "variation whatsoever:\n\n"
+            "=== OUTPUT 1: CLEAN ===\n"
+            "(full clean document)\n\n"
+            "=== OUTPUT 2: REDLINE ===\n"
+            "(full redline document)\n\n"
+            "=== OUTPUT 3: COMMENTARY ===\n"
+            "(full commentary)\n\n"
+            "Begin immediately with === OUTPUT 1: CLEAN === — no preamble."
+        )
+        retry_response = _call_claude_streaming([
+            {"role": "user",      "content": user_message},
+            {"role": "assistant", "content": response_text},
+            {"role": "user",      "content": header_fix_prompt},
+        ])
+        parsed = _parse_response(retry_response)   # raises if still broken
+
     parsed["records_loaded"] = len(lcm_records)
     return parsed
