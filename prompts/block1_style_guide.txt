@@ -64,14 +64,50 @@ To achieve this, apply these rules uniformly:
 
 - Party references: "the Employer" and "the Employee" throughout.
   Never switch to: Company / Staff / you / they / the worker / the firm.
-- Statutory references: always cite Act name + section on first use,
-  abbreviated thereafter.
-  FIRST USE: "Employment Act (Cap. 91) ('the Act') s.38(1)"
-  SUBSEQUENT: "the Act s.38(1)" or simply "s.38(1)"
+- Statutory references: cite by 2020 Revised Edition short title and
+  year of enactment on first use; abbreviated thereafter.
+  Do NOT use "(Cap. XX)" chapter numbers — the AGC retired chapter
+  numbering in the 2020 Revised Edition. Use the Cap. form only for
+  repealed Acts or when citing a specific historical version.
+  FIRST USE: "Employment Act 1968 ('the Act') section 38(1)"
+  SUBSEQUENT: "the Act section 38(1)" or simply "section 38(1)"
+  Key statutes (2020 Revised Edition short titles):
+    Employment Act 1968                  Companies Act 1967
+    Central Provident Fund Act 1953      Personal Data Protection Act 2012
+    Foreign Manpower Act 1990            Unfair Contract Terms Act 1977
+    Income Tax Act 1947                  Prevention of Corruption Act 1960
 - Time references: always "calendar days" or "Business Days" — never
   just "days" without specification.
 - Amount references: always "Singapore Dollars (SGD)" on first use,
   "SGD" thereafter.
+
+
+1.5 Commentary Output Format — Summary Table
+
+Every commentary output MUST include a structured SUMMARY TABLE
+immediately after the OVERVIEW section (before the clause-by-clause
+detail). Output the table in this exact machine-parseable format:
+
+=== SUMMARY TABLE ===
+| Clause | Issue | Severity |
+| [clause ref] | [one-line issue description] | HIGH |
+| [clause ref] | [one-line issue description] | MEDIUM |
+| [clause ref] | [one-line issue description] | LOW |
+=== END SUMMARY TABLE ===
+
+Rules:
+- Include every flagged non-compliance, rewrite, and LAWYER_REVIEW item.
+- Severity levels:
+    HIGH   — legal non-compliance, unenforceability risk, or statutory
+              violation (e.g. salary below EP threshold, banned PRC
+              governing law clause)
+    MEDIUM — material gap, regulatory exposure, or missing mandatory
+              insertion (e.g. absent CPF clause, missing PDPA clause)
+    LOW    — best-practice flag, minor drafting gap, or
+              REFERENCE_ONLY item requiring external verification
+- One row per distinct issue. Maximum 30 rows.
+- Do not include FULL_AUTO clauses with no issues.
+- If no issues exist: | — | No issues identified | LOW |
 
 
 === END PART 1 ===
@@ -91,7 +127,7 @@ NEVER use: Article I / Section A / Roman numerals / lettered clauses
 
 2.2 Defined Terms
 - Capitalise on first use and define immediately in brackets:
-  "Employment Act (Cap. 91) (the 'Act')"
+  "Employment Act 1968 (the 'Act')"
   "Central Provident Fund (the 'CPF')"
   "Personal Data Protection Act 2012 (the 'PDPA')"
 - Use the defined term exclusively thereafter.
@@ -145,6 +181,37 @@ Follow this standard Singapore employment contract structure:
 12. Dispute Resolution
 13. Governing Law
 14. General Provisions
+
+
+2.6 Employment Pass Salary — Mandatory Commentary Flag
+
+TRIGGER: Document is an employment contract AND a monthly salary
+figure (in any currency) is stated anywhere in the document.
+
+When triggered, emit the following flag at the TOP of the commentary
+output, BEFORE the Summary Table and BEFORE the clause-by-clause
+section:
+
+⚠ ACTION REQUIRED — Employment Pass eligibility: stated monthly
+salary is SGD [X] (or equivalent). Verify against the current MOM
+Employment Pass qualifying salary (SGD 5,600 as of January 2025;
+higher for older candidates and for the financial services sector).
+If this employee requires an Employment Pass, confirm the salary
+meets the prevailing threshold before submission to MOM. The EP
+qualifying salary threshold is reviewed periodically — always verify
+the current figure at mom.gov.sg before advising the client. Do NOT
+treat SGD 5,600 as a permanent or settled figure.
+
+This flag is mandatory regardless of certainty level. It must appear
+even if the salary appears compliant at the time of adaptation,
+because the threshold may have changed by the time the contract is
+executed or an EP application is filed.
+
+Statutory basis: Foreign Manpower Act 1990; Employment of Foreign
+Manpower (Work Passes) Regulations 2012 (as amended).
+
+After emitting this flag, proceed to the Summary Table, then the
+clause-by-clause commentary as normal.
 
 
 === END PART 2 ===
@@ -355,7 +422,7 @@ Commentary template:
 Chinese contracts frequently omit liability caps, exposing the
 Service Provider to unlimited liability. Under Singapore contract
 law, limitation clauses are enforceable provided they satisfy the
-reasonableness test under the Unfair Contract Terms Act (Cap. 396)
+reasonableness test under the Unfair Contract Terms Act 1977
 ('UCTA'). A cap set at 12 months' fees is generally considered
 reasonable: Photo Production Ltd v Securicor Transport Ltd [1980]
 AC 827 (applied in Singapore). LAWYER REVIEW REQUIRED to confirm
@@ -396,8 +463,8 @@ Note: Do NOT convert the numerical amount — use [AMOUNT: convert
 REPLACEMENT 2 — Company Law References
 Source: 《公司法》/ PRC Company Law / Chinese company law provisions /
         references to Chinese corporate structure or registration
-Replace: Companies Act (Cap. 50) of Singapore
-First use: "Companies Act (Cap. 50) (the 'Companies Act')"
+Replace: Companies Act 1967 of Singapore
+First use: "Companies Act 1967 (the 'Companies Act')"
 Subsequent: "the Companies Act"
 
 REPLACEMENT 3 — Arbitration Body
@@ -1092,7 +1159,7 @@ CRITICAL RULE — THREE MOST IMPORTANT CLAUSES:
 MANDATORY REPLACEMENTS:
 - CIETAC → SIAC (3-arbitrator panel for JV disputes)
 - PRC governing law → Singapore law
-- PRC Companies Law → Companies Act 1967 (Cap.50)
+- PRC Companies Law → Companies Act 1967
 - Party A / Party B / 甲方 / 乙方 → Party names
 - CNY denomination → currency per Deal Profile
 - Chairman casting vote — flag with LAWYER_REVIEW,
@@ -1378,7 +1445,7 @@ INDONESIAN LAW REPLACEMENTS:
   or SOFR + 2% (USD)
 - Singapore GST 9% → Indonesian PPN 11%
   (where applicable)
-- Companies Act (Cap.50) → Law No. 40/2007
+- Companies Act 1967 → Law No. 40/2007
   on Limited Liability Companies
 - No equivalent of Singapore EA —
   apply UU Ketenagakerjaan (Law No. 13/2003
@@ -1474,7 +1541,7 @@ Insert as a standalone binding clause in every document — not embedded in boil
 (c) Notification: Each Party shall promptly notify the other Party upon becoming aware of any actual or suspected breach of this clause.
 (d) Termination: Either Party may terminate this Agreement immediately upon written notice if the other Party or any person associated with it is investigated for, charged with, or convicted of any offence under the MACC Act 2009 or equivalent anti-corruption legislation."
 
-NOTE FOR COMMENTARY: MACC s.17A enforcement is materially more active than Singapore's Prevention of Corruption Act (Cap. 241). Penalties: fine of not less than 10x the value of the gratification or RM1,000,000 (whichever higher) plus up to 20 years' imprisonment for individuals. Corporate liability is strict — organisation liable unless it proves it had adequate procedures. Singapore's POCA does not impose equivalent associated-persons corporate liability. Malaysian counterparties expect this clause — its absence is a red flag.
+NOTE FOR COMMENTARY: MACC s.17A enforcement is materially more active than Singapore's Prevention of Corruption Act 1960. Penalties: fine of not less than 10x the value of the gratification or RM1,000,000 (whichever higher) plus up to 20 years' imprisonment for individuals. Corporate liability is strict — organisation liable unless it proves it had adequate procedures. Singapore's POCA does not impose equivalent associated-persons corporate liability. Malaysian counterparties expect this clause — its absence is a red flag.
 
 PDPA 2010 MALAYSIA (FULL_AUTO — dual layer):
 Insert alongside (do not replace) any Singapore PDPA clause. Cite Act 709 throughout:

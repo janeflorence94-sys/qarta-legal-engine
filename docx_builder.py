@@ -97,6 +97,8 @@ COVER_BG_HX   = "F5F3FF"   # near-white amethyst tint
 TABLE_HDR_HX  = "F3F0FF"   # light purple table header
 GREY_BD_HX    = "E5E7EB"   # light grey for header/footer borders
 DIVIDER_HX    = "DDD6FE"   # muted amethyst for clause dividers
+HIGH_BG_HX    = "FEEAEA"   # light red — HIGH severity rows
+LOW_BG_HX     = "F3F4F6"   # light grey — LOW severity rows
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Typography
@@ -118,8 +120,11 @@ SZ_H2     = Pt(10)
 # Regex
 # ══════════════════════════════════════════════════════════════════════════════
 
-RE_PLACEHOLDER   = re.compile(r'(\[[A-Z][A-Z0-9 _]+:[^\]]{1,120}\])')
-RE_TOP_CLAUSE    = re.compile(r'^(\d+)\.\s{1,4}([A-Z].*)$')
+RE_PLACEHOLDER        = re.compile(r'(\[[A-Z][A-Z0-9 _]+:[^\]]{1,120}\])')
+RE_TOP_CLAUSE         = re.compile(r'^(\d+)\.\s{1,4}([A-Z].*)$')
+RE_SUMMARY_TABLE_START = re.compile(r'^=== SUMMARY TABLE ===', re.IGNORECASE)
+RE_SUMMARY_TABLE_END   = re.compile(r'^=== END SUMMARY TABLE ===', re.IGNORECASE)
+RE_TABLE_ROW           = re.compile(r'^\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|$')
 RE_SUB_CLAUSE    = re.compile(r'^(\d+\.\d+)\s{1,4}(\S.*)$')
 RE_SUB_SUB       = re.compile(r'^(\d+\.\d+\.\d+)\s{1,4}(\S.*)$')
 RE_SEPARATOR     = re.compile(r'^[━─=\-]{5,}$')
@@ -837,6 +842,65 @@ def _action_color(text: str):
     return BODY_CLR, False
 
 
+_SEVERITY_STYLE = {
+    'HIGH':   (HIGH_BG_HX,       DEL_CLR),
+    'MEDIUM': (ACTION_BG_HX,     ACTION_CLR),
+    'LOW':    (LOW_BG_HX,        SECONDARY),
+}
+
+
+def _render_summary_table(doc, rows: list):
+    """Render the === SUMMARY TABLE === block as a colour-coded Word table."""
+    # Section heading
+    p_hdr = doc.add_paragraph()
+    _para_spacing(p_hdr, before=200, after=80)
+    _add_left_border(p_hdr, AMETHYST_HX, bg_hex=COVER_BG_HX, thickness='18')
+    r_hdr = p_hdr.add_run("COMPLIANCE SUMMARY")
+    r_hdr.font.name       = FONT_UI
+    r_hdr.font.bold       = True
+    r_hdr.font.small_caps = True
+    r_hdr.font.size       = SZ_H1
+    r_hdr.font.color.rgb  = AMETHYST
+
+    tbl = doc.add_table(rows=1, cols=3)
+    tbl.style = 'Table Grid'
+    tbl.columns[0].width = Inches(1.0)
+    tbl.columns[1].width = Inches(4.2)
+    tbl.columns[2].width = Inches(1.1)
+
+    # Header row
+    for cell, label in zip(tbl.rows[0].cells, ['Clause', 'Issue', 'Severity']):
+        _set_cell_bg(cell, TABLE_HDR_HX)
+        p = cell.paragraphs[0]
+        p.clear()
+        r = p.add_run(label)
+        r.font.name  = FONT_UI
+        r.font.size  = SZ_LABEL
+        r.font.bold  = True
+        r.font.color.rgb = AMETHYST
+
+    for clause, issue, severity in rows:
+        sev_key = severity.upper().strip()
+        bg_hex, clr = _SEVERITY_STYLE.get(sev_key, (LOW_BG_HX, SECONDARY))
+        data_row = tbl.add_row().cells
+        for i, (cell, txt) in enumerate(zip(data_row, [clause, issue, severity])):
+            _set_cell_bg(cell, bg_hex)
+            p = cell.paragraphs[0]
+            p.clear()
+            r = p.add_run(txt)
+            if i == 2:  # Severity column — UI font, bold, colour
+                r.font.name  = FONT_UI
+                r.font.size  = SZ_LABEL
+                r.font.bold  = True
+                r.font.color.rgb = clr
+            else:
+                r.font.name  = FONT_BODY
+                r.font.size  = SZ_BODY
+                r.font.color.rgb = BODY_CLR
+
+    doc.add_paragraph()  # breathing room after table
+
+
 def _render_pdpa_table(doc, rows: list):
     tbl = doc.add_table(rows=1, cols=2)
     tbl.style = 'Table Grid'
@@ -884,15 +948,36 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
                      "Commentary & Legal Basis", date_str)
     _add_deal_profile_table(doc, corridor, doc_type, company_name, date_str)
 
-    in_pdpa   = False
-    pdpa_rows = []
-    flag_type = None
+    in_pdpa        = False
+    pdpa_rows      = []
+    flag_type      = None
+    in_summary     = False
+    summary_rows   = []
 
     for line in text.splitlines():
         s = line.strip()
         if not s:
-            flag_type = None
+            if not in_summary:
+                flag_type = None
             continue
+
+        # ── Summary table block ───────────────────────────────────────────────
+        if RE_SUMMARY_TABLE_START.match(s):
+            in_summary   = True
+            summary_rows = []
+            continue
+        if RE_SUMMARY_TABLE_END.match(s):
+            in_summary = False
+            _render_summary_table(doc, summary_rows)
+            continue
+        if in_summary:
+            m = RE_TABLE_ROW.match(s)
+            if m:
+                clause, issue, severity = m.group(1), m.group(2), m.group(3)
+                if clause.lower().strip() != 'clause':   # skip header row
+                    summary_rows.append((clause, issue, severity))
+            continue
+        # ─────────────────────────────────────────────────────────────────────
 
         # PDPA checklist
         if 'PDPA COMPLIANCE CHECKLIST' in s or 'DATA PROTECTION CHECKLIST' in s:
