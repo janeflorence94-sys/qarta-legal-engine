@@ -137,6 +137,15 @@ RE_BOX_START     = re.compile(r'^[┌╔]')
 RE_BOX_END       = re.compile(r'^[└╚]')
 RE_BOX_MID       = re.compile(r'^[│║]')
 
+# Markdown inline — matches **bold** and *italic* spans (bold checked first
+# so ** is never mis-split as two * italic markers)
+_RE_INLINE_MD  = re.compile(r'\*\*(.+?)\*\*|\*([^*\n]+?)\*', re.DOTALL)
+
+# Markdown structural
+RE_MD_HEADING  = re.compile(r'^(#{1,3})\s+(.+)$')   # # / ## / ###
+RE_MD_HR       = re.compile(r'^-{3}$')               # --- only (not ────)
+RE_MD_BLOCK    = re.compile(r'^>\s*(.*)')             # > blockquote
+
 FIELD_LABELS = ('Original:', 'Change:', 'Reason:', 'Action required:')
 
 
@@ -158,15 +167,32 @@ def _fmt(run, font=FONT_BODY, bold=False, italic=False, strike=False,
 
 def _add_md_runs(para, text: str, font=FONT_BODY, color=None, italic=False,
                  bold=False, strike=False, underline=False, size=None):
-    """Split text on **...** markers and add alternating normal/bold runs.
-    Odd-indexed segments after split are inside **...** and rendered bold."""
-    parts = text.split('**')
-    for i, part in enumerate(parts):
-        if not part:
-            continue
-        r = para.add_run(part)
-        is_bold = bold or (i % 2 == 1)
-        _fmt(r, font=font, bold=is_bold, italic=italic, strike=strike,
+    """Parse **bold** and *italic* markdown within `text` and emit styled runs.
+
+    Base `italic` / `bold` kwargs are additive: a **bold** span inside an
+    already-italic field (e.g. Original:) becomes bold-italic.  Unrecognised
+    asterisks that don't form a valid span are passed through verbatim.
+    """
+    last = 0
+    for m in _RE_INLINE_MD.finditer(text):
+        # Normal text before this match
+        if m.start() > last:
+            r = para.add_run(text[last:m.start()])
+            _fmt(r, font=font, bold=bold, italic=italic, strike=strike,
+                 underline=underline, color=color, size=size)
+        if m.group(1) is not None:       # **bold**
+            r = para.add_run(m.group(1))
+            _fmt(r, font=font, bold=True, italic=italic, strike=strike,
+                 underline=underline, color=color, size=size)
+        else:                            # *italic*
+            r = para.add_run(m.group(2))
+            _fmt(r, font=font, bold=bold, italic=True, strike=strike,
+                 underline=underline, color=color, size=size)
+        last = m.end()
+    # Remaining text after the last match (or the whole string if no matches)
+    if last < len(text):
+        r = para.add_run(text[last:])
+        _fmt(r, font=font, bold=bold, italic=italic, strike=strike,
              underline=underline, color=color, size=size)
 
 
@@ -635,6 +661,41 @@ def _add_clause_heading(doc, num_str: str, title_str: str, level: int):
     return para
 
 
+def _write_md_heading(doc, level: int, text: str):
+    """Render a markdown # / ## / ### heading as a styled Word paragraph.
+
+    Level 1 — large bold small-caps body font, amethyst divider after (mirrors
+               top-level clause heading visual weight).
+    Level 2 — bold body font, H2 size.
+    Level 3 — bold body font, body size (used for sub-section titles).
+    """
+    para = doc.add_paragraph()
+    if level == 1:
+        _para_spacing(para, before=240, after=100)
+        r = para.add_run(text)
+        r.font.name       = FONT_BODY
+        r.font.size       = SZ_H1
+        r.font.bold       = True
+        r.font.small_caps = True
+        r.font.color.rgb  = BODY_CLR
+        _horizontal_rule(doc)
+    elif level == 2:
+        _para_spacing(para, before=160, after=80)
+        r = para.add_run(text)
+        r.font.name  = FONT_BODY
+        r.font.size  = SZ_H2
+        r.font.bold  = True
+        r.font.color.rgb = BODY_CLR
+    else:   # level 3
+        _para_spacing(para, before=100, after=60)
+        r = para.add_run(text)
+        r.font.name  = FONT_BODY
+        r.font.size  = SZ_BODY
+        r.font.bold  = True
+        r.font.color.rgb = BODY_CLR
+    return para
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Flag box helpers
 # ══════════════════════════════════════════════════════════════════════════════
@@ -715,6 +776,23 @@ def _build_clean(text: str, company_name: str, doc_type: str,
             flag_type = None
             continue
 
+        # ── Markdown structural elements ──────────────────────────────────────
+        m_h = RE_MD_HEADING.match(s)
+        if m_h:
+            flag_type = None
+            _write_md_heading(doc, len(m_h.group(1)), m_h.group(2).strip())
+            continue
+        if RE_MD_HR.match(s):
+            _horizontal_rule(doc)
+            continue
+        m_bq = RE_MD_BLOCK.match(s)
+        if m_bq:
+            flag_type = None
+            content = m_bq.group(1).strip()
+            _add_flag_para(doc, content or s, _detect_flag(content) or 'note')
+            continue
+        # ─────────────────────────────────────────────────────────────────────
+
         # Box-drawing blocks
         if RE_BOX_START.match(s):
             flag_type = _detect_flag(s) or 'lawyer'
@@ -774,6 +852,23 @@ def _build_redline(text: str, doc_type: str, corridor: str,
         if RE_BOX_END.match(s):
             flag_type = None
             continue
+
+        # ── Markdown structural elements ──────────────────────────────────────
+        m_h = RE_MD_HEADING.match(s)
+        if m_h:
+            flag_type = None
+            _write_md_heading(doc, len(m_h.group(1)), m_h.group(2).strip())
+            continue
+        if RE_MD_HR.match(s):
+            _horizontal_rule(doc)
+            continue
+        m_bq = RE_MD_BLOCK.match(s)
+        if m_bq:
+            flag_type = None
+            content = m_bq.group(1).strip()
+            _add_flag_para(doc, content or s, _detect_flag(content) or 'note')
+            continue
+        # ─────────────────────────────────────────────────────────────────────
 
         # ── Insertion — underlined green #059669 ──────────────────────────────
         if s.startswith('>> INSERTED:') or s.startswith('INSERTED:'):
@@ -976,6 +1071,23 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
                 clause, issue, severity = m.group(1), m.group(2), m.group(3)
                 if clause.lower().strip() != 'clause':   # skip header row
                     summary_rows.append((clause, issue, severity))
+            continue
+        # ─────────────────────────────────────────────────────────────────────
+
+        # ── Markdown structural elements ──────────────────────────────────────
+        m_h = RE_MD_HEADING.match(s)
+        if m_h:
+            flag_type = None
+            _write_md_heading(doc, len(m_h.group(1)), m_h.group(2).strip())
+            continue
+        if RE_MD_HR.match(s):
+            _horizontal_rule(doc)
+            continue
+        m_bq = RE_MD_BLOCK.match(s)
+        if m_bq:
+            flag_type = None
+            content = m_bq.group(1).strip()
+            _add_flag_para(doc, content or s, _detect_flag(content) or 'note')
             continue
         # ─────────────────────────────────────────────────────────────────────
 
