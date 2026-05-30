@@ -7,11 +7,11 @@ Produces three lawyer-ready Word documents per adaptation job:
   - commentary.docx : clause-by-clause legal analysis
 
 Typography:
-  Body            — Georgia 10pt  #1A1A2E
+  Body            — Times New Roman 10pt  #1A1A2E
   Labels/badges   — Arial
   Metadata tags   — Courier New
-  Clause titles   — Georgia bold small-caps
-  Clause numbers  — Georgia bold amethyst #7C3AED
+  Clause titles   — Times New Roman bold small-caps
+  Clause numbers  — Times New Roman bold amethyst #7C3AED
 """
 
 import re
@@ -102,7 +102,7 @@ DIVIDER_HX    = "DDD6FE"   # muted amethyst for clause dividers
 # Typography
 # ══════════════════════════════════════════════════════════════════════════════
 
-FONT_BODY = "Georgia"
+FONT_BODY = "Times New Roman"
 FONT_UI   = "Arial"
 FONT_MONO = "Courier New"
 
@@ -149,6 +149,20 @@ def _fmt(run, font=FONT_BODY, bold=False, italic=False, strike=False,
     run.font.small_caps = small_caps
     run.font.size       = size or SZ_BODY
     run.font.color.rgb  = color or BODY_CLR
+
+
+def _add_md_runs(para, text: str, font=FONT_BODY, color=None, italic=False,
+                 bold=False, strike=False, underline=False, size=None):
+    """Split text on **...** markers and add alternating normal/bold runs.
+    Odd-indexed segments after split are inside **...** and rendered bold."""
+    parts = text.split('**')
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        r = para.add_run(part)
+        is_bold = bold or (i % 2 == 1)
+        _fmt(r, font=font, bold=is_bold, italic=italic, strike=strike,
+             underline=underline, color=color, size=size)
 
 
 def _para_spacing(para, before=0, after=80):
@@ -347,7 +361,7 @@ def _add_cover_block(doc, doc_type_label: str, corridor_label: str,
                      gov_law: str, variant: str, date_str: str):
     """
     Two-column layout table (no borders):
-      LEFT  col: QARTA LEGAL (small caps amethyst) / title (Georgia 20pt bold) /
+      LEFT  col: QARTA LEGAL (small caps amethyst) / title (Times New Roman 20pt bold) /
                  corridor + governing law (Arial 9pt grey)
       RIGHT col: AI-ASSISTED DRAFT badge / "For lawyer review..." italic /
                  preparation date Courier
@@ -392,7 +406,7 @@ def _add_cover_block(doc, doc_type_label: str, corridor_label: str,
     r_brand.font.small_caps = True
     r_brand.font.color.rgb  = AMETHYST
 
-    # Document title Georgia 20pt bold dark
+    # Document title Times New Roman 20pt bold dark
     p_title = left_cell.add_paragraph()
     _para_spacing(p_title, before=20, after=40)
     r_title = p_title.add_run(doc_type_label)
@@ -453,7 +467,7 @@ def _add_cover_block(doc, doc_type_label: str, corridor_label: str,
 def _add_deal_profile_table(doc, corridor: str, doc_type: str,
                              company_name: str, date_str: str):
     """
-    Two-column table: label (bold grey Arial) / value (Georgia).
+    Two-column table: label (bold grey Arial) / value (Times New Roman).
     Header row with light purple background.
     Employer entity value shown amber italic = user input required.
     """
@@ -581,7 +595,7 @@ def _clause_parts(line: str):
 
 def _add_clause_heading(doc, num_str: str, title_str: str, level: int):
     """
-    Amethyst Georgia bold clause number + dark small-caps Georgia title.
+    Amethyst Times New Roman bold clause number + dark small-caps Times New Roman title.
     Level 1: spacing + thin amethyst divider after.
     Level 2/3: indented with hanging indent.
     """
@@ -595,14 +609,14 @@ def _add_clause_heading(doc, num_str: str, title_str: str, level: int):
     elif level == 3:
         _set_indent(para, left_twips=720, hanging_twips=360)
 
-    # Clause number — amethyst Georgia bold
+    # Clause number — amethyst Times New Roman bold
     r_num = para.add_run(num_str + "  ")
     r_num.font.name  = FONT_BODY
     r_num.font.bold  = True
     r_num.font.size  = SZ_H1 if level == 1 else SZ_H2
     r_num.font.color.rgb = AMETHYST
 
-    # Clause title — dark Georgia bold small-caps
+    # Clause title — dark Times New Roman bold small-caps
     r_txt = para.add_run(title_str)
     r_txt.font.name       = FONT_BODY
     r_txt.font.bold       = (level <= 2)
@@ -654,20 +668,20 @@ def _add_flag_para(doc, text: str, flag_type: str, is_label=False):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _para_with_placeholders(doc, line: str):
-    """Body paragraph — [PLACEHOLDER:...] rendered bold amber Courier."""
+    """Body paragraph — [PLACEHOLDER:...] rendered bold amber Courier; **text** rendered bold."""
     para = doc.add_paragraph()
     _para_spacing(para, after=80)
     for part in RE_PLACEHOLDER.split(line):
         if not part:
             continue
-        r = para.add_run(part)
         if RE_PLACEHOLDER.fullmatch(part):
+            r = para.add_run(part)
             r.font.name  = FONT_MONO
             r.font.size  = SZ_BODY
             r.font.bold  = True
             r.font.color.rgb = ACTION_CLR
         else:
-            _fmt(r)
+            _add_md_runs(para, part)
     return para
 
 
@@ -805,7 +819,7 @@ def _build_redline(text: str, doc_type: str, corridor: str,
 
         para = doc.add_paragraph()
         _para_spacing(para, after=80)
-        _fmt(para.add_run(s))
+        _add_md_runs(para, s)
 
     return doc
 
@@ -943,9 +957,9 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
         flag_type = None
 
         # Four structured fields:
-        #   Original:  → grey italic Georgia (original text)
-        #   Change:    → dark Georgia
-        #   Reason:    → blue-grey italic Georgia
+        #   Original:  → grey italic Times New Roman (original text)
+        #   Change:    → dark Times New Roman
+        #   Reason:    → blue-grey italic Times New Roman
         #   Action required: → colour-coded
         matched_lbl = next((l for l in FIELD_LABELS if s.startswith(l)), None)
         if matched_lbl:
@@ -961,18 +975,15 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
             r_lbl.font.color.rgb = SECONDARY
 
             if matched_lbl == 'Original:':
-                r_val = para.add_run(rest)
-                _fmt(r_val, italic=True, color=SECONDARY)
+                _add_md_runs(para, rest, italic=True, color=SECONDARY)
             elif matched_lbl == 'Reason:':
-                r_val = para.add_run(rest)
-                _fmt(r_val, italic=True, color=BLUE_GREY)
+                _add_md_runs(para, rest, italic=True, color=BLUE_GREY)
             elif matched_lbl == 'Action required:':
                 clr, bold = _action_color(rest)
                 r_val = para.add_run(rest)
                 _fmt(r_val, font=FONT_UI, bold=bold, size=SZ_LABEL, color=clr)
             else:
-                r_val = para.add_run(rest)
-                _fmt(r_val)
+                _add_md_runs(para, rest)
             continue
 
         # Recommendations
@@ -980,13 +991,13 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
             para = doc.add_paragraph()
             _para_spacing(para, before=0, after=40)
             _set_indent(para, left_twips=360)
-            _fmt(para.add_run(s), italic=True, color=SECONDARY)
+            _add_md_runs(para, s, italic=True, color=SECONDARY)
             continue
 
         # Default body
         para = doc.add_paragraph()
         _para_spacing(para, after=80)
-        _fmt(para.add_run(s))
+        _add_md_runs(para, s)
 
     if pdpa_rows:
         _render_pdpa_table(doc, pdpa_rows)
