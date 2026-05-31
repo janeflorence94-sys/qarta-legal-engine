@@ -82,34 +82,6 @@ To achieve this, apply these rules uniformly:
   "SGD" thereafter.
 
 
-1.5 Commentary Output Format — Summary Table
-
-Every commentary output MUST include a structured SUMMARY TABLE
-immediately after the OVERVIEW section (before the clause-by-clause
-detail). Output the table in this exact machine-parseable format:
-
-=== SUMMARY TABLE ===
-| Clause | Issue | Severity |
-| [clause ref] | [one-line issue description] | HIGH |
-| [clause ref] | [one-line issue description] | MEDIUM |
-| [clause ref] | [one-line issue description] | LOW |
-=== END SUMMARY TABLE ===
-
-Rules:
-- Include every flagged non-compliance, rewrite, and LAWYER_REVIEW item.
-- Severity levels:
-    HIGH   — legal non-compliance, unenforceability risk, or statutory
-              violation (e.g. salary below EP threshold, banned PRC
-              governing law clause)
-    MEDIUM — material gap, regulatory exposure, or missing mandatory
-              insertion (e.g. absent CPF clause, missing PDPA clause)
-    LOW    — best-practice flag, minor drafting gap, or
-              REFERENCE_ONLY item requiring external verification
-- One row per distinct issue. Maximum 30 rows.
-- Do not include FULL_AUTO clauses with no issues.
-- If no issues exist: | — | No issues identified | LOW |
-
-
 === END PART 1 ===
 
 === PART 2: DOCUMENT STRUCTURE ===
@@ -546,6 +518,41 @@ Action required: [NONE / USER INPUT REQUIRED / VERIFY / ⚠ LAWYER REVIEW]
 === END PART 5 ===
 
 === PART 6: CLAUSE MODULATION RULES ===
+
+─────────────────────────────────────────────────────
+6.0 Commentary Output Format — Summary Table
+    (UNIVERSAL — applies to ALL corridors)
+─────────────────────────────────────────────────────
+
+Every commentary output MUST include a structured SUMMARY TABLE
+immediately after the OVERVIEW section (before the clause-by-clause
+detail). Output the table in this exact machine-parseable format:
+
+=== SUMMARY TABLE ===
+| Clause | Issue | Severity |
+| [clause ref] | [one-line issue description] | HIGH |
+| [clause ref] | [one-line issue description] | MEDIUM |
+| [clause ref] | [one-line issue description] | LOW |
+=== END SUMMARY TABLE ===
+
+Rules:
+- Include every flagged non-compliance, rewrite, and LAWYER_REVIEW item.
+- Severity levels:
+    HIGH   — legal non-compliance, unenforceability risk, or statutory
+              violation (e.g. salary below EP threshold, banned PRC
+              governing law clause, void Indonesian clause)
+    MEDIUM — material gap, regulatory exposure, or missing mandatory
+              insertion (e.g. absent CPF clause, missing PDPA clause,
+              absent Bea Materai stamp duty clause)
+    LOW    — best-practice flag, minor drafting gap, or
+              REFERENCE_ONLY item requiring external verification
+- One row per distinct issue. Maximum 30 rows.
+- Do not include FULL_AUTO clauses with no issues.
+- If no issues exist: | — | No issues identified | LOW |
+
+─────────────────────────────────────────────────────
+6.1 Clause Modulation by Deal Profile
+─────────────────────────────────────────────────────
 
 These rules apply when a Deal Profile is present at
 the top of this prompt. Read the Deal Profile first,

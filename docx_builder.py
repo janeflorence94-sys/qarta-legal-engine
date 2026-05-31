@@ -84,6 +84,7 @@ NOTE_CLR   = RGBColor(0x0E, 0xA5, 0xE9)   # #0EA5E9 blue border
 # Diff colours
 INS_CLR    = RGBColor(0x05, 0x96, 0x69)   # #059669 green — insertions
 DEL_CLR    = RGBColor(0xDC, 0x26, 0x26)   # #DC2626 red  — deletions
+REDLINE_CLR = RGBColor(0xC0, 0x00, 0x00)  # #C00000 dark red — commentary Change/Action labels
 
 # Hex strings (no #) for XML attributes
 AMETHYST_HX   = "7C3AED"
@@ -1072,6 +1073,30 @@ def _build_redline(text: str, doc_type: str, corridor: str,
             flag_type = None
             continue
 
+        # ── Insertion / Deletion — checked FIRST so >> prefix doesn't get
+        #    captured by RE_MD_BLOCK (which matches any line starting with >) ──
+        if s.startswith('>> INSERTED:') or s.startswith('INSERTED:'):
+            _, _, rest = s.partition(':')
+            para = doc.add_paragraph()
+            _para_spacing(para, after=80)
+            rl = para.add_run("INSERTED: ")
+            _fmt(rl, font=FONT_UI, bold=True, size=SZ_LABEL, color=INS_CLR)
+            rb = para.add_run(rest.strip())
+            _fmt(rb, underline=True, color=INS_CLR)
+            continue
+
+        if (s.startswith('>> REMOVED:') or s.startswith('REMOVED:')
+                or s.startswith('ORIGINAL:')):
+            _, _, rest = s.partition(':')
+            para = doc.add_paragraph()
+            _para_spacing(para, after=80)
+            rl = para.add_run("REMOVED: ")
+            _fmt(rl, font=FONT_UI, bold=True, size=SZ_LABEL, color=DEL_CLR)
+            rb = para.add_run(rest.strip())
+            _fmt(rb, strike=True, color=DEL_CLR)
+            continue
+        # ─────────────────────────────────────────────────────────────────────
+
         # ── Markdown structural elements ──────────────────────────────────────
         m_h = RE_MD_HEADING.match(s)
         if m_h:
@@ -1088,29 +1113,6 @@ def _build_redline(text: str, doc_type: str, corridor: str,
             _add_flag_para(doc, content or s, _detect_flag(content) or 'note')
             continue
         # ─────────────────────────────────────────────────────────────────────
-
-        # ── Insertion — underlined green #059669 ──────────────────────────────
-        if s.startswith('>> INSERTED:') or s.startswith('INSERTED:'):
-            _, _, rest = s.partition(':')
-            para = doc.add_paragraph()
-            _para_spacing(para, after=80)
-            rl = para.add_run("INSERTED: ")
-            _fmt(rl, font=FONT_UI, bold=True, size=SZ_LABEL, color=INS_CLR)
-            rb = para.add_run(rest.strip())
-            _fmt(rb, underline=True, color=INS_CLR)
-            continue
-
-        # ── Deletion — strikethrough red #DC2626 ──────────────────────────────
-        if (s.startswith('>> REMOVED:') or s.startswith('REMOVED:')
-                or s.startswith('ORIGINAL:')):
-            _, _, rest = s.partition(':')
-            para = doc.add_paragraph()
-            _para_spacing(para, after=80)
-            rl = para.add_run("REMOVED: ")
-            _fmt(rl, font=FONT_UI, bold=True, size=SZ_LABEL, color=DEL_CLR)
-            rb = para.add_run(rest.strip())
-            _fmt(rb, strike=True, color=DEL_CLR)
-            continue
 
         # Flag boxes
         if RE_BOX_START.match(s):
@@ -1373,10 +1375,10 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
         flag_type = None
 
         # Four structured fields:
-        #   Original:  → grey italic Times New Roman (original text)
-        #   Change:    → dark Times New Roman
-        #   Reason:    → blue-grey italic Times New Roman
-        #   Action required: → colour-coded
+        #   Original:        → grey italic (original clause text before adaptation)
+        #   Change:          → REDLINE_CLR red (what was changed — visually flagged)
+        #   Reason:          → blue-grey italic (statutory / commercial basis)
+        #   Action required: → REDLINE_CLR red bold (attorney or user action needed)
         matched_lbl = next((l for l in FIELD_LABELS if s.startswith(l)), None)
         if matched_lbl:
             rest = s[len(matched_lbl):].strip()
@@ -1394,12 +1396,13 @@ def _build_commentary(text: str, company_name: str, doc_type: str,
                 _add_md_runs(para, rest, italic=True, color=SECONDARY)
             elif matched_lbl == 'Reason:':
                 _add_md_runs(para, rest, italic=True, color=BLUE_GREY)
+            elif matched_lbl == 'Change:':
+                # Red — mirrors redline convention; shows exactly what was rewritten
+                _add_md_runs(para, rest, color=REDLINE_CLR)
             elif matched_lbl == 'Action required:':
-                clr, bold = _action_color(rest)
+                # Red bold — attorney / user must act before execution
                 r_val = para.add_run(rest)
-                _fmt(r_val, font=FONT_UI, bold=bold, size=SZ_LABEL, color=clr)
-            else:
-                _add_md_runs(para, rest)
+                _fmt(r_val, font=FONT_UI, bold=True, size=SZ_LABEL, color=REDLINE_CLR)
             continue
 
         # Recommendations
