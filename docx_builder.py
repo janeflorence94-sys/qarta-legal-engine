@@ -659,12 +659,18 @@ def _add_clause_heading(doc, num_str: str, title_str: str, level: int):
     r_num.font.color.rgb = AMETHYST
 
     # Clause title — dark Times New Roman bold small-caps
-    r_txt = para.add_run(title_str)
-    r_txt.font.name       = FONT_BODY
-    r_txt.font.bold       = (level <= 2)
-    r_txt.font.small_caps = (level == 1)
-    r_txt.font.size       = SZ_H1 if level == 1 else SZ_H2
-    r_txt.font.color.rgb  = BODY_CLR
+    # Level 1 uses small_caps (not supported by _add_md_runs) and is always
+    # ALL-CAPS text, so plain add_run is correct.
+    # Levels 2/3 go through _add_md_runs so inline **bold** / *italic* renders.
+    if level == 1:
+        r_txt = para.add_run(title_str)
+        r_txt.font.name       = FONT_BODY
+        r_txt.font.bold       = True
+        r_txt.font.small_caps = True
+        r_txt.font.size       = SZ_H1
+        r_txt.font.color.rgb  = BODY_CLR
+    else:
+        _add_md_runs(para, title_str, bold=(level == 2), size=SZ_H2)
 
     if level == 1:
         _horizontal_rule(doc)
@@ -732,11 +738,9 @@ def _add_flag_para(doc, text: str, flag_type: str, is_label=False):
     _set_indent(p, left_twips=180)
     _add_left_border(p, bdr_hex, bg_hex=bg_hex)
     clean = text.lstrip('┌└│║⚠ℹ* ').strip()
-    r = p.add_run(clean)
-    r.font.name  = FONT_UI
-    r.font.bold  = is_label
-    r.font.size  = SZ_LABEL
-    r.font.color.rgb = clr
+    # Route through _add_md_runs so **bold** / *italic* inside flag content renders
+    # (flag-continuation lines would otherwise pass literal asterisks through)
+    _add_md_runs(p, clean, font=FONT_UI, bold=is_label, size=SZ_LABEL, color=clr)
     return p
 
 
