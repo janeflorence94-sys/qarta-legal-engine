@@ -884,22 +884,38 @@ def _render_lines_to_cell(container, lines_text: str) -> None:
 
 
 def _add_bilingual_notice(doc) -> None:
-    """Render the UU Bahasa Art. 31 compliance notice as an amber flag box."""
-    p = doc.add_paragraph()
-    _para_spacing(p, before=120, after=80)
-    _set_indent(p, left_twips=180)
-    _add_left_border(p, ACTION_BD_HX, bg_hex=ACTION_BG_HX, thickness='24')
-    r = p.add_run(
-        "⚠ BILINGUAL REQUIREMENT — UU Bahasa (Law No.…24/2009) "
-        "Art.…31: Agreements involving Indonesian parties or performed in "
-        "Indonesia must be executed in Bahasa Indonesia.  Where a bilingual version "
-        "is used, the Bahasa Indonesia text is the legally prevailing version.  "
-        "Clauses showing “" + _SWORN_PLACEHOLDER + "” require a sworn "
-        "translator (penerjemah tersumpah) before execution."
+    """Prominent DRAFT warning box for the SG-ID bilingual clean document.
+
+    Two paragraphs sharing a thick red left border + light-red background:
+      Line 1 — bold red "DRAFT — BAHASA INDONESIA COLUMN NOT LEGALLY VALID"
+      Line 2 — plain body disclaimer citing UU Bahasa Art. 31
+    """
+    # ── Header line ───────────────────────────────────────────────────────────
+    p_h = doc.add_paragraph()
+    _para_spacing(p_h, before=160, after=40)
+    _set_indent(p_h, left_twips=180)
+    _add_left_border(p_h, 'DC2626', bg_hex=HIGH_BG_HX, thickness='36')
+    r_h = p_h.add_run("DRAFT — BAHASA INDONESIA COLUMN NOT LEGALLY VALID")
+    r_h.font.name      = FONT_UI
+    r_h.font.bold      = True
+    r_h.font.size      = SZ_LABEL
+    r_h.font.color.rgb = DEL_CLR
+
+    # ── Body — disclaimer ─────────────────────────────────────────────────────
+    p_b = doc.add_paragraph()
+    _para_spacing(p_b, before=0, after=160)
+    _set_indent(p_b, left_twips=180)
+    _add_left_border(p_b, 'DC2626', bg_hex=HIGH_BG_HX, thickness='36')
+    r_b = p_b.add_run(
+        "The Bahasa Indonesia column is engine-generated for reference only and has "
+        "NOT been certified by a sworn translator. It is not legally valid. Before "
+        "execution, the Indonesian text must be verified and certified by a sworn "
+        "translator (penerjemah tersumpah). The certified Indonesian version is the "
+        "legally prevailing text under UU Bahasa (Law No. 24/2009) Art. 31."
     )
-    r.font.name      = FONT_UI
-    r.font.size      = SZ_LABEL
-    r.font.color.rgb = ACTION_CLR
+    r_b.font.name      = FONT_UI
+    r_b.font.size      = SZ_LABEL
+    r_b.font.color.rgb = BODY_CLR
 
 
 def _build_clean_bilingual(doc, text: str) -> None:
@@ -958,8 +974,19 @@ def _build_clean_bilingual(doc, text: str) -> None:
         # Indonesian side — engine-produced text or sworn-translator placeholder
         id_text = (block.get('id') or '').strip()
         if id_text:
+            # Tag: small grey italic header in the cell's initial paragraph
+            p_tag = id_cell.paragraphs[0]
+            p_tag.clear()
+            _para_spacing(p_tag, before=40, after=20)
+            r_tag = p_tag.add_run("[DRAFT — sworn translation required]")
+            r_tag.font.name      = FONT_UI
+            r_tag.font.size      = SZ_SMALL
+            r_tag.font.italic    = True
+            r_tag.font.color.rgb = SECONDARY
+            # Engine-produced Indonesian content follows the tag
             _render_lines_to_cell(id_cell, id_text)
         else:
+            # No engine content — sworn-translator placeholder only
             p = id_cell.paragraphs[0]
             p.clear()
             _para_spacing(p, before=80, after=80)
