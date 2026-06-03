@@ -155,10 +155,18 @@ Follow this standard Singapore employment contract structure:
 14. General Provisions
 
 
-2.6 Employment Pass Salary — Mandatory Commentary Flag
+2.6 Work Authorisation Salary — Mandatory Commentary Flag (DESTINATION-SCOPED)
 
-TRIGGER: Document is an employment contract AND a monthly salary
-figure (in any currency) is stated anywhere in the document.
+DESTINATION GUARD: This Employment Pass flag applies ONLY when the
+destination/country-of-expansion is SINGAPORE (e.g. corridor CN→SG, or
+any corridor ending in SG). If the destination is NOT Singapore, SKIP
+this entire section 2.6 and apply the destination country's own work-
+authorisation rules from the relevant corridor part instead (e.g. for
+Indonesia, see the SG→ID corridor part).
+
+TRIGGER (Singapore destination only): Document is an employment contract
+AND a monthly salary figure (in any currency) is stated anywhere in the
+document..
 
 When triggered, emit the following flag at the TOP of the commentary
 output, BEFORE the Summary Table and BEFORE the clause-by-clause
@@ -1387,6 +1395,45 @@ For each clause:
 === END PART 9 ===
 
 === PART 10: SG→ID CORRIDOR ADAPTATION RULES ===
+
+10.0 EMPLOYMENT — INDONESIAN WORK AUTHORISATION (DESTINATION = INDONESIA)
+
+DESTINATION GUARD: These rules apply when the destination/country-of-
+expansion is INDONESIA. For employment contracts in this corridor, DO NOT
+apply Singapore Employment Pass / MOM salary-threshold rules (section 2.6).
+Singapore work-pass types (Employment Pass, S Pass, Work Permit) MUST NOT
+appear. Use Indonesian work authorisation instead.
+
+TRIGGER: Document is an employment contract for work performed in Indonesia.
+
+When triggered, emit at the TOP of the commentary, before the Summary Table:
+
+⚠ ACTION REQUIRED — Foreign worker authorisation (Indonesia): If the
+Employee is a foreign national, the Employer must obtain an approved RPTKA
+(Rencana Penggunaan Tenaga Kerja Asing — Foreign Manpower Utilisation Plan)
+from the Ministry of Manpower (Kementerian Ketenagakerjaan) BEFORE the
+foreign worker commences work, and the worker must hold a valid KITAS
+(Kartu Izin Tinggal Terbatas — Limited Stay Permit) with work authorisation.
+The former IMTA permit has been replaced by a Notifikasi and the DKPTKA levy
+under the current framework. Certain positions are reserved for Indonesian
+nationals. Statutory basis: UU No. 13/2003 (Manpower Law) as amended by
+UU No. 6/2023 (Cipta Kerja); verify current RPTKA procedure and DKPTKA levy
+at kemnaker.go.id.
+
+⚠ ACTION REQUIRED — Mandatory social security (all Indonesian employment):
+The Employer must enrol the Employee in BPJS Ketenagakerjaan (employment/
+social security) and BPJS Kesehatan (health), per UU No. 24/2011. Severance
+(pesangon), long-service pay (penghargaan masa kerja) and compensation of
+rights (penggantian hak) are governed by UU Cipta Kerja and PP No. 35/2021,
+and differ materially from Singapore notice-pay norms — reflect these in the
+termination clause.
+
+⚠ ACTION REQUIRED — Probation (Indonesia): A probationary period may only be
+imposed in a permanent (PKWTT) contract and may not exceed three (3) months.
+Probation in a fixed-term (PKWT) contract is prohibited and void.
+
+After emitting these flags, proceed to the Summary Table, then the clause-by-
+clause commentary as normal.
 
 APPLIES TO ALL DOCUMENTS IN THE SG→ID CORRIDOR.
 
